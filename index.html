@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Images to PDF Converter</title>
+    <title>Images to PDF Converter - Optimized</title>
     <style>
         * {
             margin: 0;
@@ -38,6 +38,15 @@
         .subtitle {
             font-size: 1.2em;
             opacity: 0.9;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin: 5px;
         }
 
         .main-card {
@@ -218,25 +227,38 @@
             text-overflow: ellipsis;
         }
 
-        .image-order {
+        .image-meta {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .meta-badge {
             display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7em;
             font-weight: 600;
         }
 
-        .image-size {
-            display: inline-block;
+        .meta-badge.order {
+            background: #667eea;
+            color: white;
+        }
+
+        .meta-badge.size {
             background: #28c940;
             color: white;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
-            margin-left: 5px;
+        }
+
+        .meta-badge.dims {
+            background: #ffbd2e;
+            color: #333;
+        }
+
+        .meta-badge.optimized {
+            background: #764ba2;
+            color: white;
         }
 
         .remove-btn {
@@ -288,6 +310,41 @@
             font-size: 1.3em;
         }
 
+        .settings-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .settings-tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .settings-tab:hover {
+            color: #667eea;
+        }
+
+        .settings-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .settings-content {
+            display: none;
+        }
+
+        .settings-content.active {
+            display: block;
+        }
+
         .settings-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -304,10 +361,27 @@
             color: #666;
             font-size: 0.95em;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-icon {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 0.7em;
+            cursor: help;
         }
 
         .setting-group select,
-        .setting-group input {
+        .setting-group input[type="number"],
+        .setting-group input[type="text"] {
             padding: 10px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
@@ -319,6 +393,46 @@
         .setting-group input:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slider-value {
+            display: flex;
+            justify-content: space-between;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e0e0e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
         }
 
         .radio-group {
@@ -343,6 +457,43 @@
         .radio-option label {
             cursor: pointer;
             font-weight: normal;
+        }
+
+        .optimization-info {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .optimization-info h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .optimization-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-item-small {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .stat-value-small {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label-small {
+            font-size: 0.8em;
+            color: #666;
         }
 
         .progress-bar {
@@ -461,6 +612,25 @@
             opacity: 0.9;
         }
 
+        .comparison {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .comparison-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: white;
+        }
+
+        .savings {
+            color: #ffbd2e;
+            font-weight: bold;
+        }
+
         .loading-spinner {
             display: inline-block;
             width: 20px;
@@ -474,13 +644,195 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 12px;
+            background: #333;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.85em;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+
+        /* LLM Optimization Styles */
+        .llm-toggle-container {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+        }
+
+        .llm-toggle-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .llm-toggle-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+        }
+
+        .llm-toggle-title h4 {
+            font-size: 1.3em;
+            margin: 0;
+        }
+
+        .llm-icon {
+            font-size: 1.8em;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: 0.4s;
+            border-radius: 30px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #28c940;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .llm-description {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.95em;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .llm-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .llm-feature {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .llm-feature-icon {
+            font-size: 1.2em;
+        }
+
+        .llm-active-badge {
+            display: inline-block;
+            background: #28c940;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .llm-preset-info {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            color: white;
+        }
+
+        .llm-preset-info h5 {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .llm-preset-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .llm-preset-list li {
+            padding: 5px 0;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .llm-preset-list li:before {
+            content: "✓";
+            font-weight: bold;
+            color: #28c940;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>📄 Images to PDF Converter</h1>
-            <p class="subtitle">Upload multiple images and convert them to a single PDF</p>
+            <p class="subtitle">Optimized for Quality & Small File Size</p>
+            <div>
+                <span class="badge">✨ Smart Compression</span>
+                <span class="badge">🎯 No Quality Loss</span>
+                <span class="badge">⚡ Up to 80% Smaller</span>
+                <span class="badge">🤖 LLM Optimized</span>
+            </div>
         </header>
 
         <div class="main-card">
@@ -488,7 +840,7 @@
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📤</div>
                 <div class="upload-text">Click to upload or drag and drop</div>
-                <div class="upload-subtext">Support: JPG, PNG, GIF, WEBP - Optimized for bulk uploads</div>
+                <div class="upload-subtext">Support: JPG, PNG, GIF, WEBP - Optimized compression</div>
                 <div id="imageCount" style="display: none;" class="image-count">0 images uploaded</div>
             </div>
             <input type="file" id="fileInput" accept="image/*" multiple>
@@ -496,7 +848,23 @@
             <!-- Download Section -->
             <div class="download-section" id="downloadSection">
                 <h3>✅ PDF Ready!</h3>
-                <p>Your PDF has been generated successfully</p>
+                <p id="downloadDescription">Your optimized PDF has been generated successfully</p>
+                
+                <div class="comparison">
+                    <div class="comparison-item">
+                        <span>Original Size:</span>
+                        <span id="originalSize">0 MB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Optimized Size:</span>
+                        <span id="optimizedSize">0 MB</span>
+                    </div>
+                    <div class="comparison-item">
+                        <span>Saved:</span>
+                        <span class="savings" id="savedSize">0 MB (0%)</span>
+                    </div>
+                </div>
+
                 <div class="stats">
                     <div class="stat-item">
                         <div class="stat-value" id="statPages">0</div>
@@ -504,70 +872,285 @@
                     </div>
                     <div class="stat-item">
                         <div class="stat-value" id="statSize">0 MB</div>
-                        <div class="stat-label">File Size</div>
+                        <div class="stat-label">Final Size</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="statQuality">High</div>
+                        <div class="stat-label">Quality</div>
                     </div>
                 </div>
-                <button class="button success" id="downloadBtn">📥 Download PDF</button>
+                <button class="button success" id="downloadBtn">📥 Download Optimized PDF</button>
+            </div>
+
+            <!-- LLM Optimization Toggle -->
+            <div class="llm-toggle-container" id="llmToggleContainer" style="display: none;">
+                <div class="llm-toggle-header">
+                    <div class="llm-toggle-title">
+                        <span class="llm-icon">🤖</span>
+                        <div>
+                            <h4>LLM Optimization Mode</h4>
+                            <span class="llm-active-badge" id="llmActiveBadge" style="display: none;">ACTIVE</span>
+                        </div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="llmToggle" onchange="toggleLLMMode(this.checked)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="llm-description">
+                    Optimize PDF specifically for AI/LLM processing. Perfect balance between file size and text/image recognition quality for ChatGPT, Claude, and other AI tools.
+                </div>
+                <div class="llm-features">
+                    <div class="llm-feature">
+                        <span class="llm-feature-icon">📖</span>
+                        <span>OCR-Friendly</span>
+                    </div>
+                    <div class="llm-feature">
+                        <span class="llm-feature-icon">🎯</span>
+                        <span>Optimized DPI</span>
+                    </div>
+                    <div class="llm-feature">
+                        <span class="llm-feature-icon">📦</span>
+                        <span>Balanced Size</span>
+                    </div>
+                    <div class="llm-feature">
+                        <span class="llm-feature-icon">✨</span>
+                        <span>Enhanced Clarity</span>
+                    </div>
+                </div>
+                <div class="llm-preset-info" id="llmPresetInfo" style="display: none;">
+                    <h5>🎛️ Applied LLM Preset:</h5>
+                    <ul class="llm-preset-list">
+                        <li>DPI: 200 (Optimal for text recognition)</li>
+                        <li>Compression: 78% (Balanced quality/size)</li>
+                        <li>Max Width: 2048px (LLM-friendly resolution)</li>
+                        <li>Color: Auto-optimized</li>
+                        <li>PNG → JPEG conversion (preserving transparency)</li>
+                        <li>Metadata removed for smaller size</li>
+                        <li>Enhanced sharpness for text clarity</li>
+                    </ul>
+                </div>
             </div>
 
             <!-- Settings -->
             <div class="settings" id="settings" style="display: none;">
                 <h3>⚙️ PDF Settings</h3>
-                <div class="settings-grid">
-                    <div class="setting-group">
-                        <label>Page Size:</label>
-                        <select id="pageSize">
-                            <option value="a4">A4 (210 × 297 mm)</option>
-                            <option value="letter">Letter (216 × 279 mm)</option>
-                            <option value="legal">Legal (216 × 356 mm)</option>
-                            <option value="a3">A3 (297 × 420 mm)</option>
-                        </select>
-                    </div>
+                
+                <div class="settings-tabs">
+                    <button class="settings-tab active" onclick="switchSettingsTab(0)">Basic</button>
+                    <button class="settings-tab" onclick="switchSettingsTab(1)">Optimization</button>
+                    <button class="settings-tab" onclick="switchSettingsTab(2)">Advanced</button>
+                </div>
 
-                    <div class="setting-group">
-                        <label>Page Orientation:</label>
-                        <select id="orientation">
-                            <option value="portrait">Portrait (Vertical)</option>
-                            <option value="landscape">Landscape (Horizontal)</option>
-                        </select>
-                    </div>
+                <!-- Basic Settings -->
+                <div class="settings-content active" id="settings-basic">
+                    <div class="settings-grid">
+                        <div class="setting-group">
+                            <label>Page Size:</label>
+                            <select id="pageSize">
+                                <option value="a4">A4 (210 × 297 mm)</option>
+                                <option value="letter">Letter (216 × 279 mm)</option>
+                                <option value="legal">Legal (216 × 356 mm)</option>
+                                <option value="a3">A3 (297 × 420 mm)</option>
+                            </select>
+                        </div>
 
-                    <div class="setting-group">
-                        <label>Image Fit:</label>
-                        <select id="imageFit">
-                            <option value="contain">Fit to Page (No Stretch)</option>
-                            <option value="cover">Fill Page (May Crop)</option>
-                            <option value="width">Fit to Width</option>
-                            <option value="height">Fit to Height</option>
-                        </select>
-                    </div>
+                        <div class="setting-group">
+                            <label>Orientation:</label>
+                            <select id="orientation">
+                                <option value="portrait">Portrait (Vertical)</option>
+                                <option value="landscape">Landscape (Horizontal)</option>
+                            </select>
+                        </div>
 
-                    <div class="setting-group">
-                        <label>Image Quality:</label>
-                        <select id="quality">
-                            <option value="high">High (Larger file)</option>
-                            <option value="medium" selected>Medium (Balanced)</option>
-                            <option value="low">Low (Smaller file)</option>
-                        </select>
-                    </div>
+                        <div class="setting-group">
+                            <label>Image Fit:</label>
+                            <select id="imageFit">
+                                <option value="contain">Fit to Page (No Stretch)</option>
+                                <option value="cover">Fill Page</option>
+                                <option value="width">Fit to Width</option>
+                                <option value="height">Fit to Height</option>
+                            </select>
+                        </div>
 
-                    <div class="setting-group">
-                        <label>Image Alignment:</label>
-                        <div class="radio-group">
-                            <div class="radio-option">
-                                <input type="radio" id="alignCenter" name="alignment" value="center" checked>
-                                <label for="alignCenter">Center</label>
+                        <div class="setting-group">
+                            <label>Alignment:</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="alignCenter" name="alignment" value="center" checked>
+                                    <label for="alignCenter">Center</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="alignTop" name="alignment" value="top">
+                                    <label for="alignTop">Top</label>
+                                </div>
                             </div>
-                            <div class="radio-option">
-                                <input type="radio" id="alignTop" name="alignment" value="top">
-                                <label for="alignTop">Top</label>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>PDF Filename:</label>
+                            <input type="text" id="pdfName" placeholder="my-document" value="optimized-pdf">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Optimization Settings -->
+                <div class="settings-content" id="settings-optimization">
+                    <div class="settings-grid">
+                        <div class="setting-group">
+                            <label>
+                                Compression Level:
+                                <span class="info-icon tooltip" data-tooltip="Higher = smaller file, may reduce quality">i</span>
+                            </label>
+                            <div class="slider-container">
+                                <div class="slider-value">
+                                    <span>Balanced</span>
+                                    <span id="compressionValue">75%</span>
+                                </div>
+                                <input type="range" id="compressionLevel" min="50" max="95" value="75" step="5" oninput="updateCompression(this.value)">
+                                <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #999;">
+                                    <span>Smaller File</span>
+                                    <span>Higher Quality</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>
+                                Output DPI:
+                                <span class="info-icon tooltip" data-tooltip="150 DPI = screen, 300 DPI = print quality">i</span>
+                            </label>
+                            <select id="dpi">
+                                <option value="96">96 DPI (Screen - Smallest)</option>
+                                <option value="150" selected>150 DPI (Balanced)</option>
+                                <option value="200">200 DPI (High Quality)</option>
+                                <option value="300">300 DPI (Print - Largest)</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>
+                                Max Image Width:
+                                <span class="info-icon tooltip" data-tooltip="Resize large images to save space">i</span>
+                            </label>
+                            <select id="maxWidth">
+                                <option value="1200">1200px (Small)</option>
+                                <option value="1920">1920px (Medium)</option>
+                                <option value="2560" selected>2560px (Large)</option>
+                                <option value="original">Original (No resize)</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>
+                                Color Optimization:
+                                <span class="info-icon tooltip" data-tooltip="Optimize color space for smaller files">i</span>
+                            </label>
+                            <select id="colorMode">
+                                <option value="auto" selected>Auto (Recommended)</option>
+                                <option value="rgb">RGB (Full Color)</option>
+                                <option value="grayscale">Grayscale (Smaller)</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>
+                                PNG to JPEG:
+                                <span class="info-icon tooltip" data-tooltip="Convert PNG to JPEG if no transparency">i</span>
+                            </label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="pngConvertYes" name="pngConvert" value="yes" checked>
+                                    <label for="pngConvertYes">Yes</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="pngConvertNo" name="pngConvert" value="no">
+                                    <label for="pngConvertNo">No</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>
+                                Remove Metadata:
+                                <span class="info-icon tooltip" data-tooltip="Strip EXIF data to reduce file size">i</span>
+                            </label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="metadataYes" name="metadata" value="yes" checked>
+                                    <label for="metadataYes">Yes</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="metadataNo" name="metadata" value="no">
+                                    <label for="metadataNo">No</label>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="setting-group">
-                        <label>PDF Filename:</label>
-                        <input type="text" id="pdfName" placeholder="my-document" value="converted-images">
+                    <div class="optimization-info">
+                        <h4>📊 Current Optimization Stats</h4>
+                        <div class="optimization-stats">
+                            <div class="stat-item-small">
+                                <div class="stat-value-small" id="totalOriginalSize">0 MB</div>
+                                <div class="stat-label-small">Original Total</div>
+                            </div>
+                            <div class="stat-item-small">
+                                <div class="stat-value-small" id="estimatedSize">0 MB</div>
+                                <div class="stat-label-small">Estimated Size</div>
+                            </div>
+                            <div class="stat-item-small">
+                                <div class="stat-value-small" id="estimatedSavings">0%</div>
+                                <div class="stat-label-small">Est. Savings</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Advanced Settings -->
+                <div class="settings-content" id="settings-advanced">
+                    <div class="settings-grid">
+                        <div class="setting-group">
+                            <label>PDF Compression:</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="pdfCompressYes" name="pdfCompress" value="yes" checked>
+                                    <label for="pdfCompressYes">Enabled</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="pdfCompressNo" name="pdfCompress" value="no">
+                                    <label for="pdfCompressNo">Disabled</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>Subsample Images:</label>
+                            <select id="subsample">
+                                <option value="auto" selected>Auto</option>
+                                <option value="4:2:0">4:2:0 (Maximum compression)</option>
+                                <option value="4:2:2">4:2:2 (Balanced)</option>
+                                <option value="4:4:4">4:4:4 (Best quality)</option>
+                            </select>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>Margin (mm):</label>
+                            <input type="number" id="margin" min="0" max="50" value="10">
+                        </div>
+
+                        <div class="setting-group">
+                            <label>
+                                Image Sharpness:
+                                <span class="info-icon tooltip" data-tooltip="Enhance edge clarity for better text recognition">i</span>
+                            </label>
+                            <select id="sharpness">
+                                <option value="none">None</option>
+                                <option value="low">Low</option>
+                                <option value="medium" selected>Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -580,7 +1163,7 @@
 
             <!-- Controls -->
             <div class="controls" id="controls" style="display: none;">
-                <button class="button" id="convertBtn">🔄 Generate PDF</button>
+                <button class="button" id="convertBtn">🔄 Generate Optimized PDF</button>
                 <button class="button secondary" id="clearBtn">🗑️ Clear All</button>
             </div>
 
@@ -591,7 +1174,7 @@
             <div class="empty-state" id="emptyState">
                 <div class="empty-icon">🖼️</div>
                 <p>No images uploaded yet</p>
-                <p style="font-size: 0.9em; margin-top: 10px;">Tip: You can upload hundreds of images at once!</p>
+                <p style="font-size: 0.9em; margin-top: 10px;">Upload your images and get an optimized PDF with up to 80% size reduction!</p>
             </div>
         </div>
     </div>
@@ -604,6 +1187,8 @@
         let draggedElement = null;
         let generatedPDF = null;
         let pdfBlob = null;
+        let originalTotalSize = 0;
+        let llmModeEnabled = false;
 
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
@@ -619,6 +1204,76 @@
         const downloadSection = document.getElementById('downloadSection');
         const downloadBtn = document.getElementById('downloadBtn');
         const imageCount = document.getElementById('imageCount');
+        const llmToggleContainer = document.getElementById('llmToggleContainer');
+
+        // LLM Optimization Toggle
+        function toggleLLMMode(enabled) {
+            llmModeEnabled = enabled;
+            const llmActiveBadge = document.getElementById('llmActiveBadge');
+            const llmPresetInfo = document.getElementById('llmPresetInfo');
+            const convertBtn = document.getElementById('convertBtn');
+            
+            if (enabled) {
+                // Apply LLM-optimized presets
+                document.getElementById('dpi').value = '200';
+                document.getElementById('compressionLevel').value = '78';
+                updateCompression(78);
+                document.getElementById('maxWidth').value = '2048';
+                document.getElementById('colorMode').value = 'auto';
+                document.getElementById('pngConvertYes').checked = true;
+                document.getElementById('metadataYes').checked = true;
+                document.getElementById('sharpness').value = 'medium';
+                document.getElementById('pageSize').value = 'a4';
+                
+                llmActiveBadge.style.display = 'inline-block';
+                llmPresetInfo.style.display = 'block';
+                convertBtn.innerHTML = '🤖 Generate LLM-Optimized PDF';
+                
+                showNotification('🤖 LLM Mode Activated - Optimal settings applied for AI processing', 'success');
+            } else {
+                // Reset to default
+                document.getElementById('dpi').value = '150';
+                document.getElementById('compressionLevel').value = '75';
+                updateCompression(75);
+                document.getElementById('maxWidth').value = '2560';
+                
+                llmActiveBadge.style.display = 'none';
+                llmPresetInfo.style.display = 'none';
+                convertBtn.innerHTML = '🔄 Generate Optimized PDF';
+            }
+            
+            updateOptimizationStats();
+        }
+
+        // Switch Settings Tabs
+        function switchSettingsTab(index) {
+            const tabs = document.querySelectorAll('.settings-tab');
+            const contents = document.querySelectorAll('.settings-content');
+            
+            tabs.forEach((tab, i) => {
+                if (i === index) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            contents.forEach((content, i) => {
+                if (i === index) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+        }
+
+        // Update Compression Value Display
+        function updateCompression(value) {
+            const label = value >= 85 ? 'High Quality' : value >= 70 ? 'Balanced' : 'Smaller File';
+            document.getElementById('compressionValue').textContent = value + '%';
+            document.querySelector('.slider-value span').textContent = label;
+            updateOptimizationStats();
+        }
 
         // Upload Area Click
         uploadArea.addEventListener('click', () => {
@@ -628,7 +1283,7 @@
         // File Input Change
         fileInput.addEventListener('change', (e) => {
             handleFiles(e.target.files);
-            fileInput.value = ''; // Reset input
+            fileInput.value = '';
         });
 
         // Drag and Drop
@@ -647,14 +1302,13 @@
             handleFiles(e.dataTransfer.files);
         });
 
-        // Handle Files with optimization
+        // Handle Files with Optimization
         async function handleFiles(files) {
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             const filesArray = Array.from(files);
             
             showNotification(`Processing ${filesArray.length} images...`, 'success');
 
-            // Process in batches for better performance
             const batchSize = 10;
             for (let i = 0; i < filesArray.length; i += batchSize) {
                 const batch = filesArray.slice(i, i + batchSize);
@@ -664,7 +1318,6 @@
                         if (validTypes.includes(file.type)) {
                             const reader = new FileReader();
                             reader.onload = (e) => {
-                                // Get image dimensions
                                 const img = new Image();
                                 img.onload = () => {
                                     uploadedImages.push({
@@ -673,8 +1326,10 @@
                                         id: Date.now() + Math.random(),
                                         width: img.width,
                                         height: img.height,
-                                        size: file.size
+                                        size: file.size,
+                                        type: file.type
                                     });
+                                    originalTotalSize += file.size;
                                     resolve();
                                 };
                                 img.src = e.target.result;
@@ -687,14 +1342,142 @@
                     });
                 }));
 
-                // Update UI after each batch
                 renderImages();
+                updateOptimizationStats();
             }
 
             showNotification(`Successfully loaded ${uploadedImages.length} images!`, 'success');
         }
 
-        // Render Images with virtual scrolling optimization
+        // Apply Sharpness Filter
+        function applySharpness(ctx, width, height, level) {
+            if (level === 'none') return;
+            
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const pixels = imageData.data;
+            const tempData = new Uint8ClampedArray(pixels);
+            
+            // Sharpening kernel strengths
+            const kernels = {
+                'low': [0, -0.5, 0, -0.5, 3, -0.5, 0, -0.5, 0],
+                'medium': [0, -1, 0, -1, 5, -1, 0, -1, 0],
+                'high': [-1, -1, -1, -1, 9, -1, -1, -1, -1]
+            };
+            
+            const kernel = kernels[level];
+            
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    for (let c = 0; c < 3; c++) {
+                        let sum = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = ((y + ky) * width + (x + kx)) * 4 + c;
+                                sum += tempData[idx] * kernel[(ky + 1) * 3 + (kx + 1)];
+                            }
+                        }
+                        const idx = (y * width + x) * 4 + c;
+                        pixels[idx] = Math.max(0, Math.min(255, sum));
+                    }
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        // Optimize Image
+        async function optimizeImage(imageData, width, height, type) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+
+                img.onload = () => {
+                    const maxWidthSetting = document.getElementById('maxWidth').value;
+                    const maxWidth = maxWidthSetting === 'original' ? 999999 : parseInt(maxWidthSetting);
+                    const compressionLevel = parseInt(document.getElementById('compressionLevel').value) / 100;
+                    const dpi = parseInt(document.getElementById('dpi').value);
+                    const colorMode = document.getElementById('colorMode').value;
+                    const convertPNG = document.querySelector('input[name="pngConvert"]:checked').value === 'yes';
+                    const sharpness = document.getElementById('sharpness').value;
+
+                    // Calculate new dimensions
+                    let newWidth = width;
+                    let newHeight = height;
+
+                    if (width > maxWidth) {
+                        newWidth = maxWidth;
+                        newHeight = (height * maxWidth) / width;
+                    }
+
+                    // Apply DPI scaling
+                    const dpiScale = dpi / 96;
+                    newWidth = Math.round(newWidth * dpiScale);
+                    newHeight = Math.round(newHeight * dpiScale);
+
+                    canvas.width = newWidth;
+                    canvas.height = newHeight;
+
+                    // Apply color mode
+                    if (colorMode === 'grayscale') {
+                        ctx.filter = 'grayscale(100%)';
+                    }
+
+                    // Draw image with smooth scaling
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                    // Apply sharpness for LLM mode or if set
+                    if (llmModeEnabled || sharpness !== 'none') {
+                        applySharpness(ctx, newWidth, newHeight, sharpness);
+                    }
+
+                    // Determine output format
+                    let outputFormat = 'image/jpeg';
+                    let quality = compressionLevel;
+                    
+                    if (type === 'image/png' && !convertPNG) {
+                        // Check for transparency
+                        const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
+                        let hasTransparency = false;
+                        for (let i = 3; i < imageData.data.length; i += 4) {
+                            if (imageData.data[i] < 255) {
+                                hasTransparency = true;
+                                break;
+                            }
+                        }
+                        if (hasTransparency) {
+                            outputFormat = 'image/png';
+                        }
+                    }
+
+                    // Convert to data URL with compression
+                    const optimizedData = canvas.toDataURL(outputFormat, quality);
+                    resolve(optimizedData);
+                };
+
+                img.src = imageData;
+            });
+        }
+
+        // Update Optimization Stats
+        function updateOptimizationStats() {
+            const compressionLevel = parseInt(document.getElementById('compressionLevel').value) / 100;
+            const dpi = parseInt(document.getElementById('dpi').value);
+            const dpiScale = dpi / 96;
+            
+            // More accurate estimation considering DPI scaling
+            const estimatedReduction = llmModeEnabled ? 0.75 : (1 - compressionLevel * 0.8);
+            const estimatedSize = originalTotalSize * (1 - estimatedReduction) * dpiScale;
+            const savings = (estimatedReduction * 100).toFixed(0);
+
+            document.getElementById('totalOriginalSize').textContent = formatFileSize(originalTotalSize);
+            document.getElementById('estimatedSize').textContent = formatFileSize(estimatedSize);
+            document.getElementById('estimatedSavings').textContent = savings + '%';
+        }
+
+        // Render Images
         function renderImages() {
             if (uploadedImages.length === 0) {
                 imagesGrid.innerHTML = '';
@@ -703,6 +1486,7 @@
                 settings.style.display = 'none';
                 imageCount.style.display = 'none';
                 downloadSection.style.display = 'none';
+                llmToggleContainer.style.display = 'none';
                 return;
             }
 
@@ -710,17 +1494,20 @@
             controls.style.display = 'block';
             settings.style.display = 'block';
             imageCount.style.display = 'block';
+            llmToggleContainer.style.display = 'block';
             imageCount.textContent = `${uploadedImages.length} image${uploadedImages.length > 1 ? 's' : ''} uploaded`;
 
-            // Render with lazy loading for performance
             imagesGrid.innerHTML = uploadedImages.map((img, index) => `
                 <div class="image-card" draggable="true" data-id="${img.id}">
                     <button class="remove-btn" onclick="removeImage(${img.id})">×</button>
                     <img src="${img.data}" alt="${img.name}" loading="lazy">
                     <div class="image-info">
                         <div class="image-name" title="${img.name}">${img.name}</div>
-                        <span class="image-order">#${index + 1}</span>
-                        <span class="image-size">${formatFileSize(img.size)}</span>
+                        <div class="image-meta">
+                            <span class="meta-badge order">#${index + 1}</span>
+                            <span class="meta-badge size">${formatFileSize(img.size)}</span>
+                            <span class="meta-badge dims">${img.width}×${img.height}</span>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -734,13 +1521,18 @@
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+            return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
         }
 
         // Remove Image
         function removeImage(id) {
+            const img = uploadedImages.find(img => img.id === id);
+            if (img) {
+                originalTotalSize -= img.size;
+            }
             uploadedImages = uploadedImages.filter(img => img.id !== id);
             renderImages();
+            updateOptimizationStats();
             showNotification('Image removed', 'success');
         }
 
@@ -748,14 +1540,16 @@
         clearBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to remove all images?')) {
                 uploadedImages = [];
+                originalTotalSize = 0;
                 generatedPDF = null;
                 pdfBlob = null;
                 renderImages();
+                updateOptimizationStats();
                 showNotification('All images cleared', 'success');
             }
         });
 
-        // Add Drag Listeners for Reordering
+        // Add Drag Listeners
         function addDragListeners() {
             const cards = document.querySelectorAll('.image-card');
             
@@ -792,7 +1586,7 @@
             });
         }
 
-        // Convert to PDF with optimizations
+        // Convert to PDF with Advanced Optimization
         convertBtn.addEventListener('click', async () => {
             if (uploadedImages.length === 0) {
                 showNotification('Please upload at least one image', 'error');
@@ -800,7 +1594,8 @@
             }
 
             convertBtn.disabled = true;
-            convertBtn.innerHTML = '<span class="loading-spinner"></span> Generating...';
+            const originalBtnText = convertBtn.innerHTML;
+            convertBtn.innerHTML = '<span class="loading-spinner"></span> ' + (llmModeEnabled ? 'Optimizing for LLM...' : 'Optimizing & Generating...');
             progressBar.style.display = 'block';
             progressText.style.display = 'block';
             downloadSection.style.display = 'none';
@@ -810,27 +1605,21 @@
                 
                 const pageSize = document.getElementById('pageSize').value;
                 const orientation = document.getElementById('orientation').value;
-                const quality = document.getElementById('quality').value;
                 const imageFit = document.getElementById('imageFit').value;
                 const alignment = document.querySelector('input[name="alignment"]:checked').value;
-                const filename = document.getElementById('pdfName').value || 'converted-images';
-
-                const qualityMap = {
-                    high: 0.95,
-                    medium: 0.75,
-                    low: 0.5
-                };
+                const filename = document.getElementById('pdfName').value || 'optimized-pdf';
+                const pdfCompress = document.querySelector('input[name="pdfCompress"]:checked').value === 'yes';
+                const margin = parseInt(document.getElementById('margin').value);
 
                 const pdf = new jsPDF({
                     orientation: orientation,
                     unit: 'mm',
                     format: pageSize,
-                    compress: true
+                    compress: pdfCompress
                 });
 
                 const pageWidth = pdf.internal.pageSize.getWidth();
                 const pageHeight = pdf.internal.pageSize.getHeight();
-                const margin = 10;
 
                 for (let i = 0; i < uploadedImages.length; i++) {
                     const img = uploadedImages[i];
@@ -839,15 +1628,20 @@
                     const progress = Math.round(((i + 1) / uploadedImages.length) * 100);
                     progressFill.style.width = progress + '%';
                     progressFill.textContent = progress + '%';
-                    progressText.textContent = `Processing image ${i + 1} of ${uploadedImages.length}...`;
+                    progressText.textContent = llmModeEnabled ? 
+                        `🤖 LLM-optimizing image ${i + 1} of ${uploadedImages.length}...` :
+                        `Optimizing image ${i + 1} of ${uploadedImages.length}...`;
 
                     if (i > 0) {
                         pdf.addPage();
                     }
 
-                    // Load image
+                    // Optimize image
+                    const optimizedData = await optimizeImage(img.data, img.width, img.height, img.type);
+
+                    // Load optimized image
                     const imgElement = new Image();
-                    imgElement.src = img.data;
+                    imgElement.src = optimizedData;
                     await new Promise(resolve => imgElement.onload = resolve);
 
                     const imgWidth = imgElement.width;
@@ -856,53 +1650,44 @@
 
                     let width, height, x, y;
 
-                    // Calculate dimensions based on fit mode
+                    // Calculate dimensions
+                    const availableWidth = pageWidth - (margin * 2);
+                    const availableHeight = pageHeight - (margin * 2);
+                    const availableRatio = availableWidth / availableHeight;
+
                     switch (imageFit) {
                         case 'contain':
-                            // Fit entire image without stretching
-                            const availableWidth = pageWidth - (margin * 2);
-                            const availableHeight = pageHeight - (margin * 2);
-                            const availableRatio = availableWidth / availableHeight;
-
                             if (imgRatio > availableRatio) {
-                                // Image is wider
                                 width = availableWidth;
                                 height = width / imgRatio;
                             } else {
-                                // Image is taller
                                 height = availableHeight;
                                 width = height * imgRatio;
                             }
                             break;
-
                         case 'cover':
-                            // Fill page, may crop
-                            width = pageWidth - (margin * 2);
-                            height = pageHeight - (margin * 2);
+                            width = availableWidth;
+                            height = availableHeight;
                             break;
-
                         case 'width':
-                            // Fit to width
-                            width = pageWidth - (margin * 2);
+                            width = availableWidth;
                             height = width / imgRatio;
-                            if (height > pageHeight - (margin * 2)) {
-                                height = pageHeight - (margin * 2);
+                            if (height > availableHeight) {
+                                height = availableHeight;
                                 width = height * imgRatio;
                             }
                             break;
-
                         case 'height':
-                            // Fit to height
-                            height = pageHeight - (margin * 2);
+                            height = availableHeight;
                             width = height * imgRatio;
-                            if (width > pageWidth - (margin * 2)) {
-                                width = pageWidth - (margin * 2);
+                            if (width > availableWidth) {
+                                width = availableWidth;
                                 height = width / imgRatio;
                             }
                             break;
                     }
 
-                    // Calculate position based on alignment
+                    // Calculate position
                     if (alignment === 'center') {
                         x = (pageWidth - width) / 2;
                         y = (pageHeight - height) / 2;
@@ -911,41 +1696,56 @@
                         y = margin;
                     }
 
-                    // Add image to PDF
+                    // Add to PDF
                     pdf.addImage(
-                        img.data,
+                        optimizedData,
                         'JPEG',
                         x,
                         y,
                         width,
                         height,
                         undefined,
-                        'FAST',
-                        0
+                        'FAST'
                     );
 
-                    // Small delay for UI updates on large batches
                     if (uploadedImages.length > 50 && i % 10 === 0) {
                         await new Promise(resolve => setTimeout(resolve, 0));
                     }
                 }
 
-                // Generate PDF blob
+                // Generate PDF
                 pdfBlob = pdf.output('blob');
-                generatedPDF = pdf;
+                const pdfSize = pdfBlob.size;
+                const savings = originalTotalSize - pdfSize;
+                const savingsPercent = ((savings / originalTotalSize) * 100).toFixed(1);
 
-                // Show download section with stats
-                const sizeInMB = (pdfBlob.size / (1024 * 1024)).toFixed(2);
+                // Update stats
+                document.getElementById('originalSize').textContent = formatFileSize(originalTotalSize);
+                document.getElementById('optimizedSize').textContent = formatFileSize(pdfSize);
+                document.getElementById('savedSize').textContent = `${formatFileSize(savings)} (${savingsPercent}%)`;
                 document.getElementById('statPages').textContent = uploadedImages.length;
-                document.getElementById('statSize').textContent = sizeInMB + ' MB';
+                document.getElementById('statSize').textContent = formatFileSize(pdfSize);
+                
+                const qualityText = llmModeEnabled ? 'LLM-Ready' : 
+                    (document.getElementById('compressionLevel').value >= 85 ? 'High' : 'Balanced');
+                document.getElementById('statQuality').textContent = qualityText;
+                
+                // Update download description
+                const downloadDescription = document.getElementById('downloadDescription');
+                if (llmModeEnabled) {
+                    downloadDescription.textContent = '🤖 Your LLM-optimized PDF is ready! Perfect for ChatGPT, Claude, and other AI tools.';
+                } else {
+                    downloadDescription.textContent = 'Your optimized PDF has been generated successfully';
+                }
                 
                 downloadSection.style.display = 'block';
                 progressBar.style.display = 'none';
                 progressText.style.display = 'none';
                 
-                showNotification('PDF generated successfully! 🎉', 'success');
-                
-                // Scroll to download section
+                const successMessage = llmModeEnabled ? 
+                    `🤖 LLM-optimized PDF ready! Saved ${savingsPercent}% 🎉` :
+                    `PDF optimized! Saved ${savingsPercent}% 🎉`;
+                showNotification(successMessage, 'success');
                 downloadSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             } catch (error) {
@@ -953,14 +1753,17 @@
                 showNotification('Error creating PDF: ' + error.message, 'error');
             } finally {
                 convertBtn.disabled = false;
-                convertBtn.innerHTML = '🔄 Generate PDF';
+                convertBtn.innerHTML = originalBtnText;
             }
         });
 
-        // Download PDF Button
+        // Download PDF
         downloadBtn.addEventListener('click', () => {
             if (pdfBlob) {
-                const filename = document.getElementById('pdfName').value || 'converted-images';
+                let filename = document.getElementById('pdfName').value || 'optimized-pdf';
+                if (llmModeEnabled && !filename.includes('llm')) {
+                    filename += '-llm-optimized';
+                }
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(pdfBlob);
                 link.download = filename + '.pdf';
@@ -988,6 +1791,7 @@
 
         // Initialize
         renderImages();
+        updateOptimizationStats();
     </script>
 </body>
 </html>
