@@ -320,6 +320,8 @@
             gap: 10px;
             margin-bottom: 20px;
             border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .settings-tab {
@@ -331,6 +333,8 @@
             cursor: pointer;
             transition: all 0.3s;
             border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .settings-tab:hover {
@@ -671,6 +675,7 @@
             margin-bottom: 5px;
         }
 
+        /* LLM Optimization Styles - MOBILE OPTIMIZED */
         .llm-toggle-container {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             padding: 20px;
@@ -681,31 +686,39 @@
 
         .llm-toggle-header {
             display: flex;
+            flex-direction: row;
             align-items: center;
             justify-content: space-between;
             margin-bottom: 15px;
+            gap: 15px;
         }
 
         .llm-toggle-title {
             display: flex;
+            flex-direction: row;
             align-items: center;
             gap: 10px;
             color: white;
+            flex: 1;
+            min-width: 0;
         }
 
         .llm-toggle-title h4 {
-            font-size: 1.3em;
+            font-size: 1.1em;
             margin: 0;
+            line-height: 1.3;
         }
 
         .llm-icon {
-            font-size: 1.8em;
+            font-size: 1.5em;
+            flex-shrink: 0;
         }
 
         .toggle-switch {
             position: relative;
             width: 60px;
             height: 30px;
+            flex-shrink: 0;
         }
 
         .toggle-switch input {
@@ -748,14 +761,14 @@
 
         .llm-description {
             color: rgba(255, 255, 255, 0.95);
-            font-size: 0.95em;
+            font-size: 0.9em;
             line-height: 1.5;
             margin-bottom: 15px;
         }
 
         .llm-features {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 10px;
         }
 
@@ -764,7 +777,7 @@
             padding: 10px 15px;
             border-radius: 8px;
             color: white;
-            font-size: 0.9em;
+            font-size: 0.85em;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -772,17 +785,19 @@
 
         .llm-feature-icon {
             font-size: 1.2em;
+            flex-shrink: 0;
         }
 
         .llm-active-badge {
             display: inline-block;
             background: #28c940;
             color: white;
-            padding: 5px 15px;
+            padding: 4px 12px;
             border-radius: 15px;
-            font-size: 0.85em;
+            font-size: 0.75em;
             font-weight: 600;
             animation: pulse 2s infinite;
+            white-space: nowrap;
         }
 
         @keyframes pulse {
@@ -804,7 +819,7 @@
 
         .llm-preset-info h5 {
             margin-bottom: 10px;
-            font-size: 1.1em;
+            font-size: 1em;
         }
 
         .llm-preset-list {
@@ -814,16 +829,18 @@
 
         .llm-preset-list li {
             padding: 5px 0;
-            font-size: 0.9em;
+            font-size: 0.85em;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 8px;
+            line-height: 1.4;
         }
 
         .llm-preset-list li:before {
             content: "✓";
             font-weight: bold;
             color: #28c940;
+            flex-shrink: 0;
         }
 
         .auto-orientation-notice {
@@ -833,7 +850,7 @@
             color: white;
             margin-top: 15px;
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 10px;
             font-size: 0.9em;
         }
@@ -841,6 +858,10 @@
         .auto-orientation-notice.disabled {
             background: #e0e0e0;
             color: #666;
+        }
+
+        .auto-orientation-notice > span {
+            flex-shrink: 0;
         }
 
         .loading-overlay {
@@ -861,7 +882,8 @@
             padding: 40px;
             border-radius: 15px;
             text-align: center;
-            max-width: 400px;
+            max-width: 90%;
+            width: 400px;
         }
 
         .loading-content .loading-spinner {
@@ -869,6 +891,251 @@
             height: 50px;
             border: 5px solid #e0e0e0;
             border-top-color: #667eea;
+        }
+
+        /* MOBILE RESPONSIVE STYLES */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .subtitle {
+                font-size: 1em;
+            }
+
+            .badge {
+                font-size: 0.7em;
+                padding: 4px 10px;
+                margin: 3px;
+            }
+
+            .main-card {
+                padding: 20px;
+            }
+
+            .upload-area {
+                padding: 40px 15px;
+            }
+
+            .upload-icon {
+                font-size: 3em;
+            }
+
+            .upload-text {
+                font-size: 1.1em;
+            }
+
+            .upload-subtext {
+                font-size: 0.8em;
+            }
+
+            .button {
+                padding: 12px 25px;
+                font-size: 1em;
+                margin: 5px;
+            }
+
+            .button.success {
+                font-size: 1em;
+                padding: 15px 30px;
+            }
+
+            .settings {
+                padding: 15px;
+            }
+
+            .settings h3 {
+                font-size: 1.1em;
+            }
+
+            .settings-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .images-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+                max-height: 400px;
+            }
+
+            .image-card img {
+                height: 150px;
+            }
+
+            /* LLM Toggle Mobile Fix */
+            .llm-toggle-container {
+                padding: 15px;
+            }
+
+            .llm-toggle-header {
+                flex-direction: row;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .llm-toggle-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .llm-toggle-title h4 {
+                font-size: 1em;
+                line-height: 1.3;
+            }
+
+            .llm-icon {
+                font-size: 1.3em;
+            }
+
+            .llm-active-badge {
+                font-size: 0.7em;
+                padding: 3px 10px;
+            }
+
+            .llm-description {
+                font-size: 0.85em;
+            }
+
+            .llm-features {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .llm-feature {
+                padding: 8px 12px;
+                font-size: 0.8em;
+            }
+
+            .llm-preset-info {
+                padding: 12px;
+            }
+
+            .llm-preset-info h5 {
+                font-size: 0.9em;
+            }
+
+            .llm-preset-list li {
+                font-size: 0.8em;
+            }
+
+            .stats {
+                gap: 15px;
+            }
+
+            .stat-item {
+                padding: 12px 20px;
+            }
+
+            .stat-value {
+                font-size: 1.5em;
+            }
+
+            .notification {
+                right: 10px;
+                left: 10px;
+                max-width: calc(100% - 20px);
+            }
+
+            .download-section {
+                padding: 20px;
+            }
+
+            .download-section h3 {
+                font-size: 1.2em;
+            }
+
+            .optimization-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .auto-orientation-notice {
+                font-size: 0.85em;
+                padding: 12px;
+            }
+
+            .loading-content {
+                padding: 30px 20px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .subtitle {
+                font-size: 0.9em;
+            }
+
+            .badge {
+                font-size: 0.65em;
+                padding: 3px 8px;
+            }
+
+            .main-card {
+                padding: 15px;
+            }
+
+            .button {
+                padding: 10px 20px;
+                font-size: 0.9em;
+                display: block;
+                width: 100%;
+                margin: 8px 0;
+            }
+
+            .button.success {
+                font-size: 0.95em;
+                padding: 12px 25px;
+            }
+
+            .images-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .image-card img {
+                height: 120px;
+            }
+
+            .meta-badge {
+                font-size: 0.65em;
+                padding: 2px 6px;
+            }
+
+            .llm-toggle-header {
+                gap: 8px;
+            }
+
+            .toggle-switch {
+                width: 50px;
+                height: 26px;
+            }
+
+            .toggle-slider:before {
+                height: 18px;
+                width: 18px;
+            }
+
+            input:checked + .toggle-slider:before {
+                transform: translateX(24px);
+            }
+
+            .settings-tabs {
+                gap: 5px;
+            }
+
+            .settings-tab {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
@@ -938,11 +1205,11 @@
             <div class="llm-toggle-container" id="llmToggleContainer" style="display: none;">
                 <div class="llm-toggle-header">
                     <div class="llm-toggle-title">
-                        <span class="llm-icon">🤖</span>
-                        <div>
-                            <h4>LLM Optimization Mode</h4>
-                            <span class="llm-active-badge" id="llmActiveBadge" style="display: none;">ACTIVE</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="llm-icon">🤖</span>
+                            <h4>LLM Optimization</h4>
                         </div>
+                        <span class="llm-active-badge" id="llmActiveBadge" style="display: none;">ACTIVE</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="llmToggle">
@@ -1241,6 +1508,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
+        // [Previous JavaScript code remains exactly the same - no changes needed]
         // Global variables
         let uploadedImages = [];
         let draggedElement = null;
@@ -1422,17 +1690,14 @@
                     
                     img.onload = function() {
                         try {
-                            // Create canvas
                             const canvas = document.createElement('canvas');
                             const ctx = canvas.getContext('2d', { willReadFrequently: false });
                             
                             canvas.width = img.width;
                             canvas.height = img.height;
                             
-                            // Draw image
                             ctx.drawImage(img, 0, 0);
                             
-                            // Check for transparency
                             let hasTransparency = false;
                             const outputFormat = document.getElementById('outputFormat').value;
                             
@@ -1450,7 +1715,6 @@
                                 }
                             }
                             
-                            // Determine format
                             let format = 'image/jpeg';
                             let extension = 'jpg';
                             
@@ -1459,13 +1723,9 @@
                                 extension = 'png';
                             }
                             
-                            // Convert to data URL with high quality
                             const dataUrl = canvas.toDataURL(format, 0.95);
-                            
-                            // Calculate approximate size
                             const base64Length = dataUrl.split(',')[1].length;
                             const approximateSize = (base64Length * 3) / 4;
-                            
                             const orientation = getImageOrientation(img.width, img.height);
                             
                             console.log(`✓ Converted: ${file.name} → ${extension.toUpperCase()} (${img.width}x${img.height})`);
@@ -1520,7 +1780,6 @@
                 const file = filesArray[i];
                 
                 try {
-                    // Check if it's an image by MIME type or extension
                     const isImage = file.type.startsWith('image/') || 
                                    /\.(jpe?g|png|gif|webp|bmp|tiff?|svg|ico|heic|heif)$/i.test(file.name);
                     
@@ -2019,7 +2278,7 @@
         });
 
         // Initialize
-        console.log('✓ Image to PDF Converter Ready - Accepts ALL image formats!');
+        console.log('✓ Image to PDF Converter Ready - Mobile Optimized!');
         renderImages();
         updateOptimizationStats();
         updateOrientationNotice();
