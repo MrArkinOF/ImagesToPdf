@@ -261,11 +261,6 @@
             color: white;
         }
 
-        .meta-badge.optimized {
-            background: #764ba2;
-            color: white;
-        }
-
         .remove-btn {
             position: absolute;
             top: 10px;
@@ -918,7 +913,7 @@
                         </div>
                     </div>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="llmToggle" onchange="toggleLLMMode(this.checked)">
+                        <input type="checkbox" id="llmToggle">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -963,9 +958,9 @@
                 <h3>⚙️ PDF Settings</h3>
                 
                 <div class="settings-tabs">
-                    <button class="settings-tab active" onclick="switchSettingsTab(0)">Basic</button>
-                    <button class="settings-tab" onclick="switchSettingsTab(1)">Optimization</button>
-                    <button class="settings-tab" onclick="switchSettingsTab(2)">Advanced</button>
+                    <button class="settings-tab active" data-tab="0">Basic</button>
+                    <button class="settings-tab" data-tab="1">Optimization</button>
+                    <button class="settings-tab" data-tab="2">Advanced</button>
                 </div>
 
                 <!-- Basic Settings -->
@@ -986,7 +981,7 @@
                                 Orientation Mode:
                                 <span class="info-icon tooltip" data-tooltip="Auto matches each image's orientation">i</span>
                             </label>
-                            <select id="orientation" onchange="updateOrientationNotice()">
+                            <select id="orientation">
                                 <option value="auto">Auto (Match Image)</option>
                                 <option value="portrait">Portrait (Vertical)</option>
                                 <option value="landscape">Landscape (Horizontal)</option>
@@ -1041,10 +1036,10 @@
                             </label>
                             <div class="slider-container">
                                 <div class="slider-value">
-                                    <span>Balanced</span>
+                                    <span id="compressionLabel">Balanced</span>
                                     <span id="compressionValue">75%</span>
                                 </div>
-                                <input type="range" id="compressionLevel" min="50" max="95" value="75" step="5" oninput="updateCompression(this.value)">
+                                <input type="range" id="compressionLevel" min="50" max="95" value="75" step="5">
                                 <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #999;">
                                     <span>Smaller File</span>
                                     <span>Higher Quality</span>
@@ -1220,13 +1215,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
+        // Global variables
         let uploadedImages = [];
         let draggedElement = null;
-        let generatedPDF = null;
         let pdfBlob = null;
         let originalTotalSize = 0;
         let llmModeEnabled = false;
+        let imageIdCounter = 0;
 
+        // DOM Elements
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
         const imagesGrid = document.getElementById('imagesGrid');
@@ -1242,21 +1239,19 @@
         const downloadBtn = document.getElementById('downloadBtn');
         const imageCount = document.getElementById('imageCount');
         const llmToggleContainer = document.getElementById('llmToggleContainer');
+        const llmToggle = document.getElementById('llmToggle');
+        const orientationSelect = document.getElementById('orientation');
+        const compressionSlider = document.getElementById('compressionLevel');
 
         // Detect image orientation
         function getImageOrientation(width, height) {
             const aspectRatio = width / height;
-            // Consider square images as portrait
-            if (aspectRatio >= 1.05) {
-                return 'landscape';
-            } else {
-                return 'portrait';
-            }
+            return aspectRatio >= 1.05 ? 'landscape' : 'portrait';
         }
 
         // Update orientation notice
         function updateOrientationNotice() {
-            const orientation = document.getElementById('orientation').value;
+            const orientation = orientationSelect.value;
             const notice = document.getElementById('autoOrientationNotice');
             
             if (orientation === 'auto') {
@@ -1283,7 +1278,6 @@
             llmModeEnabled = enabled;
             const llmActiveBadge = document.getElementById('llmActiveBadge');
             const llmPresetInfo = document.getElementById('llmPresetInfo');
-            const convertBtn = document.getElementById('convertBtn');
             
             if (enabled) {
                 // Apply LLM-optimized presets
@@ -1296,7 +1290,7 @@
                 document.getElementById('metadataYes').checked = true;
                 document.getElementById('sharpness').value = 'medium';
                 document.getElementById('pageSize').value = 'a4';
-                document.getElementById('orientation').value = 'auto'; // Enable auto-orientation for LLM
+                document.getElementById('orientation').value = 'auto';
                 updateOrientationNotice();
                 
                 llmActiveBadge.style.display = 'inline-block';
@@ -1325,19 +1319,11 @@
             const contents = document.querySelectorAll('.settings-content');
             
             tabs.forEach((tab, i) => {
-                if (i === index) {
-                    tab.classList.add('active');
-                } else {
-                    tab.classList.remove('active');
-                }
+                tab.classList.toggle('active', i === index);
             });
             
             contents.forEach((content, i) => {
-                if (i === index) {
-                    content.classList.add('active');
-                } else {
-                    content.classList.remove('active');
-                }
+                content.classList.toggle('active', i === index);
             });
         }
 
@@ -1345,205 +1331,266 @@
         function updateCompression(value) {
             const label = value >= 85 ? 'High Quality' : value >= 70 ? 'Balanced' : 'Smaller File';
             document.getElementById('compressionValue').textContent = value + '%';
-            document.querySelector('.slider-value span').textContent = label;
+            document.getElementById('compressionLabel').textContent = label;
             updateOptimizationStats();
         }
 
         // Upload Area Click
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea || e.target.closest('.upload-icon, .upload-text, .upload-subtext')) {
+                fileInput.click();
+            }
         });
 
         // File Input Change
         fileInput.addEventListener('change', (e) => {
-            handleFiles(e.target.files);
-            fileInput.value = '';
+            if (e.target.files.length > 0) {
+                handleFiles(e.target.files);
+            }
+            fileInput.value = ''; // Reset input
         });
 
         // Drag and Drop
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             uploadArea.classList.add('dragover');
         });
 
-        uploadArea.addEventListener('dragleave', () => {
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             uploadArea.classList.remove('dragover');
         });
 
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
+            e.stopPropagation();
             uploadArea.classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFiles(files);
+            }
         });
 
-        // Handle Files with Optimization
+        // Handle Files with Better Error Handling
         async function handleFiles(files) {
             const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
             const filesArray = Array.from(files);
             
+            console.log(`Processing ${filesArray.length} files...`);
             showNotification(`Processing ${filesArray.length} images...`, 'success');
 
-            const batchSize = 10;
-            for (let i = 0; i < filesArray.length; i += batchSize) {
-                const batch = filesArray.slice(i, i + batchSize);
-                
-                await Promise.all(batch.map(file => {
-                    return new Promise((resolve) => {
-                        if (validTypes.includes(file.type)) {
-                            const reader = new FileReader();
-                            reader.onload = (e) => {
-                                const img = new Image();
-                                img.onload = () => {
-                                    const orientation = getImageOrientation(img.width, img.height);
-                                    uploadedImages.push({
-                                        name: file.name,
-                                        data: e.target.result,
-                                        id: Date.now() + Math.random(),
-                                        width: img.width,
-                                        height: img.height,
-                                        size: file.size,
-                                        type: file.type,
-                                        orientation: orientation
-                                    });
-                                    originalTotalSize += file.size;
-                                    resolve();
-                                };
-                                img.src = e.target.result;
-                            };
-                            reader.readAsDataURL(file);
-                        } else {
-                            showNotification('Skipped invalid file: ' + file.name, 'error');
-                            resolve();
-                        }
-                    });
-                }));
+            let successCount = 0;
+            let errorCount = 0;
 
-                renderImages();
-                updateOptimizationStats();
+            for (const file of filesArray) {
+                try {
+                    if (!validTypes.includes(file.type)) {
+                        console.warn(`Skipped invalid file type: ${file.name} (${file.type})`);
+                        errorCount++;
+                        continue;
+                    }
+
+                    const imageData = await loadImageFile(file);
+                    uploadedImages.push(imageData);
+                    originalTotalSize += file.size;
+                    successCount++;
+                    
+                    console.log(`Loaded: ${file.name} (${imageData.width}x${imageData.height})`);
+                    
+                } catch (error) {
+                    console.error(`Error loading ${file.name}:`, error);
+                    errorCount++;
+                }
             }
 
-            showNotification(`Successfully loaded ${uploadedImages.length} images!`, 'success');
+            if (successCount > 0) {
+                renderImages();
+                updateOptimizationStats();
+                showNotification(`Successfully loaded ${successCount} image${successCount > 1 ? 's' : ''}!`, 'success');
+            }
+
+            if (errorCount > 0) {
+                showNotification(`Failed to load ${errorCount} file${errorCount > 1 ? 's' : ''}`, 'error');
+            }
+        }
+
+        // Load Image File (Fixed version)
+        function loadImageFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = new Image();
+                    
+                    img.onload = function() {
+                        const orientation = getImageOrientation(img.width, img.height);
+                        
+                        resolve({
+                            name: file.name,
+                            data: e.target.result,
+                            id: ++imageIdCounter,
+                            width: img.width,
+                            height: img.height,
+                            size: file.size,
+                            type: file.type,
+                            orientation: orientation
+                        });
+                    };
+                    
+                    img.onerror = function() {
+                        reject(new Error(`Failed to load image: ${file.name}`));
+                    };
+                    
+                    img.src = e.target.result;
+                };
+                
+                reader.onerror = function() {
+                    reject(new Error(`Failed to read file: ${file.name}`));
+                };
+                
+                reader.readAsDataURL(file);
+            });
         }
 
         // Apply Sharpness Filter
         function applySharpness(ctx, width, height, level) {
             if (level === 'none') return;
             
-            const imageData = ctx.getImageData(0, 0, width, height);
-            const pixels = imageData.data;
-            const tempData = new Uint8ClampedArray(pixels);
-            
-            // Sharpening kernel strengths
-            const kernels = {
-                'low': [0, -0.5, 0, -0.5, 3, -0.5, 0, -0.5, 0],
-                'medium': [0, -1, 0, -1, 5, -1, 0, -1, 0],
-                'high': [-1, -1, -1, -1, 9, -1, -1, -1, -1]
-            };
-            
-            const kernel = kernels[level];
-            
-            for (let y = 1; y < height - 1; y++) {
-                for (let x = 1; x < width - 1; x++) {
-                    for (let c = 0; c < 3; c++) {
-                        let sum = 0;
-                        for (let ky = -1; ky <= 1; ky++) {
-                            for (let kx = -1; kx <= 1; kx++) {
-                                const idx = ((y + ky) * width + (x + kx)) * 4 + c;
-                                sum += tempData[idx] * kernel[(ky + 1) * 3 + (kx + 1)];
+            try {
+                const imageData = ctx.getImageData(0, 0, width, height);
+                const pixels = imageData.data;
+                const tempData = new Uint8ClampedArray(pixels);
+                
+                const kernels = {
+                    'low': [0, -0.5, 0, -0.5, 3, -0.5, 0, -0.5, 0],
+                    'medium': [0, -1, 0, -1, 5, -1, 0, -1, 0],
+                    'high': [-1, -1, -1, -1, 9, -1, -1, -1, -1]
+                };
+                
+                const kernel = kernels[level];
+                
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        for (let c = 0; c < 3; c++) {
+                            let sum = 0;
+                            for (let ky = -1; ky <= 1; ky++) {
+                                for (let kx = -1; kx <= 1; kx++) {
+                                    const idx = ((y + ky) * width + (x + kx)) * 4 + c;
+                                    sum += tempData[idx] * kernel[(ky + 1) * 3 + (kx + 1)];
+                                }
                             }
+                            const idx = (y * width + x) * 4 + c;
+                            pixels[idx] = Math.max(0, Math.min(255, sum));
                         }
-                        const idx = (y * width + x) * 4 + c;
-                        pixels[idx] = Math.max(0, Math.min(255, sum));
                     }
                 }
+                
+                ctx.putImageData(imageData, 0, 0);
+            } catch (error) {
+                console.warn('Sharpness filter failed:', error);
             }
-            
-            ctx.putImageData(imageData, 0, 0);
         }
 
         // Optimize Image
         async function optimizeImage(imageData, width, height, type) {
-            return new Promise((resolve) => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const img = new Image();
+            return new Promise((resolve, reject) => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    const img = new Image();
 
-                img.onload = () => {
-                    const maxWidthSetting = document.getElementById('maxWidth').value;
-                    const maxWidth = maxWidthSetting === 'original' ? 999999 : parseInt(maxWidthSetting);
-                    const compressionLevel = parseInt(document.getElementById('compressionLevel').value) / 100;
-                    const dpi = parseInt(document.getElementById('dpi').value);
-                    const colorMode = document.getElementById('colorMode').value;
-                    const convertPNG = document.querySelector('input[name="pngConvert"]:checked').value === 'yes';
-                    const sharpness = document.getElementById('sharpness').value;
+                    img.onload = () => {
+                        try {
+                            const maxWidthSetting = document.getElementById('maxWidth').value;
+                            const maxWidth = maxWidthSetting === 'original' ? 999999 : parseInt(maxWidthSetting);
+                            const compressionLevel = parseInt(document.getElementById('compressionLevel').value) / 100;
+                            const dpi = parseInt(document.getElementById('dpi').value);
+                            const colorMode = document.getElementById('colorMode').value;
+                            const convertPNG = document.querySelector('input[name="pngConvert"]:checked').value === 'yes';
+                            const sharpness = document.getElementById('sharpness').value;
 
-                    // Calculate new dimensions
-                    let newWidth = width;
-                    let newHeight = height;
+                            let newWidth = width;
+                            let newHeight = height;
 
-                    if (width > maxWidth) {
-                        newWidth = maxWidth;
-                        newHeight = (height * maxWidth) / width;
-                    }
-
-                    // Apply DPI scaling
-                    const dpiScale = dpi / 96;
-                    newWidth = Math.round(newWidth * dpiScale);
-                    newHeight = Math.round(newHeight * dpiScale);
-
-                    canvas.width = newWidth;
-                    canvas.height = newHeight;
-
-                    // Apply color mode
-                    if (colorMode === 'grayscale') {
-                        ctx.filter = 'grayscale(100%)';
-                    }
-
-                    // Draw image with smooth scaling
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = 'high';
-                    ctx.drawImage(img, 0, 0, newWidth, newHeight);
-
-                    // Apply sharpness for LLM mode or if set
-                    if (llmModeEnabled || sharpness !== 'none') {
-                        applySharpness(ctx, newWidth, newHeight, sharpness);
-                    }
-
-                    // Determine output format
-                    let outputFormat = 'image/jpeg';
-                    let quality = compressionLevel;
-                    
-                    if (type === 'image/png' && !convertPNG) {
-                        // Check for transparency
-                        const imageData = ctx.getImageData(0, 0, newWidth, newHeight);
-                        let hasTransparency = false;
-                        for (let i = 3; i < imageData.data.length; i += 4) {
-                            if (imageData.data[i] < 255) {
-                                hasTransparency = true;
-                                break;
+                            if (width > maxWidth) {
+                                newWidth = maxWidth;
+                                newHeight = Math.round((height * maxWidth) / width);
                             }
-                        }
-                        if (hasTransparency) {
-                            outputFormat = 'image/png';
-                        }
-                    }
 
-                    // Convert to data URL with compression
-                    const optimizedData = canvas.toDataURL(outputFormat, quality);
-                    resolve(optimizedData);
-                };
+                            const dpiScale = dpi / 96;
+                            newWidth = Math.round(newWidth * dpiScale);
+                            newHeight = Math.round(newHeight * dpiScale);
 
-                img.src = imageData;
+                            canvas.width = newWidth;
+                            canvas.height = newHeight;
+
+                            if (colorMode === 'grayscale') {
+                                ctx.filter = 'grayscale(100%)';
+                            }
+
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'high';
+                            ctx.drawImage(img, 0, 0, newWidth, newHeight);
+
+                            if (llmModeEnabled || sharpness !== 'none') {
+                                applySharpness(ctx, newWidth, newHeight, sharpness);
+                            }
+
+                            let outputFormat = 'image/jpeg';
+                            let quality = compressionLevel;
+                            
+                            if (type === 'image/png' && !convertPNG) {
+                                const imgData = ctx.getImageData(0, 0, newWidth, newHeight);
+                                let hasTransparency = false;
+                                
+                                for (let i = 3; i < imgData.data.length; i += 4) {
+                                    if (imgData.data[i] < 255) {
+                                        hasTransparency = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (hasTransparency) {
+                                    outputFormat = 'image/png';
+                                }
+                            }
+
+                            const optimizedData = canvas.toDataURL(outputFormat, quality);
+                            resolve(optimizedData);
+                            
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+
+                    img.onerror = () => {
+                        reject(new Error('Failed to load image for optimization'));
+                    };
+
+                    img.src = imageData;
+                    
+                } catch (error) {
+                    reject(error);
+                }
             });
         }
 
         // Update Optimization Stats
         function updateOptimizationStats() {
+            if (originalTotalSize === 0) {
+                document.getElementById('totalOriginalSize').textContent = '0 MB';
+                document.getElementById('estimatedSize').textContent = '0 MB';
+                document.getElementById('estimatedSavings').textContent = '0%';
+                return;
+            }
+
             const compressionLevel = parseInt(document.getElementById('compressionLevel').value) / 100;
             const dpi = parseInt(document.getElementById('dpi').value);
             const dpiScale = dpi / 96;
             
-            // More accurate estimation considering DPI scaling
             const estimatedReduction = llmModeEnabled ? 0.75 : (1 - compressionLevel * 0.8);
             const estimatedSize = originalTotalSize * (1 - estimatedReduction) * dpiScale;
             const savings = (estimatedReduction * 100).toFixed(0);
@@ -1555,8 +1602,11 @@
 
         // Render Images
         function renderImages() {
+            console.log(`Rendering ${uploadedImages.length} images...`);
+            
             if (uploadedImages.length === 0) {
                 imagesGrid.innerHTML = '';
+                imagesGrid.style.display = 'none';
                 emptyState.style.display = 'block';
                 controls.style.display = 'none';
                 settings.style.display = 'none';
@@ -1567,13 +1617,14 @@
             }
 
             emptyState.style.display = 'none';
+            imagesGrid.style.display = 'grid';
             controls.style.display = 'block';
             settings.style.display = 'block';
-            imageCount.style.display = 'block';
+            imageCount.style.display = 'inline-block';
             llmToggleContainer.style.display = 'block';
             imageCount.textContent = `${uploadedImages.length} image${uploadedImages.length > 1 ? 's' : ''} uploaded`;
 
-            imagesGrid.innerHTML = uploadedImages.map((img, index) => `
+            const html = uploadedImages.map((img, index) => `
                 <div class="image-card" draggable="true" data-id="${img.id}">
                     <button class="remove-btn" onclick="removeImage(${img.id})">×</button>
                     <img src="${img.data}" alt="${img.name}" loading="lazy">
@@ -1589,12 +1640,13 @@
                 </div>
             `).join('');
 
+            imagesGrid.innerHTML = html;
             addDragListeners();
         }
 
         // Format file size
         function formatFileSize(bytes) {
-            if (bytes === 0) return '0 B';
+            if (!bytes || bytes === 0) return '0 B';
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -1603,6 +1655,7 @@
 
         // Remove Image
         function removeImage(id) {
+            console.log(`Removing image ${id}`);
             const img = uploadedImages.find(img => img.id === id);
             if (img) {
                 originalTotalSize -= img.size;
@@ -1618,15 +1671,15 @@
             if (confirm('Are you sure you want to remove all images?')) {
                 uploadedImages = [];
                 originalTotalSize = 0;
-                generatedPDF = null;
                 pdfBlob = null;
+                imageIdCounter = 0;
                 renderImages();
                 updateOptimizationStats();
                 showNotification('All images cleared', 'success');
             }
         });
 
-        // Add Drag Listeners
+        // Add Drag Listeners for Reordering
         function addDragListeners() {
             const cards = document.querySelectorAll('.image-card');
             
@@ -1638,6 +1691,7 @@
 
                 card.addEventListener('dragend', (e) => {
                     card.style.opacity = '1';
+                    draggedElement = null;
                 });
 
                 card.addEventListener('dragover', (e) => {
@@ -1646,24 +1700,25 @@
 
                 card.addEventListener('drop', (e) => {
                     e.preventDefault();
-                    if (draggedElement !== card) {
-                        const draggedId = parseFloat(draggedElement.dataset.id);
-                        const targetId = parseFloat(card.dataset.id);
+                    if (draggedElement && draggedElement !== card) {
+                        const draggedId = parseInt(draggedElement.dataset.id);
+                        const targetId = parseInt(card.dataset.id);
 
                         const draggedIndex = uploadedImages.findIndex(img => img.id === draggedId);
                         const targetIndex = uploadedImages.findIndex(img => img.id === targetId);
 
-                        const temp = uploadedImages[draggedIndex];
-                        uploadedImages.splice(draggedIndex, 1);
-                        uploadedImages.splice(targetIndex, 0, temp);
-
-                        renderImages();
+                        if (draggedIndex !== -1 && targetIndex !== -1) {
+                            const temp = uploadedImages[draggedIndex];
+                            uploadedImages.splice(draggedIndex, 1);
+                            uploadedImages.splice(targetIndex, 0, temp);
+                            renderImages();
+                        }
                     }
                 });
             });
         }
 
-        // Convert to PDF with Advanced Optimization and Auto-Orientation
+        // Convert to PDF
         convertBtn.addEventListener('click', async () => {
             if (uploadedImages.length === 0) {
                 showNotification('Please upload at least one image', 'error');
@@ -1695,22 +1750,11 @@
                 for (let i = 0; i < uploadedImages.length; i++) {
                     const img = uploadedImages[i];
                     
-                    // Determine page orientation
-                    let pageOrientation;
-                    if (orientationMode === 'auto') {
-                        pageOrientation = img.orientation;
-                    } else {
-                        pageOrientation = orientationMode;
-                    }
+                    let pageOrientation = orientationMode === 'auto' ? img.orientation : orientationMode;
+                    
+                    if (pageOrientation === 'portrait') portraitCount++;
+                    else landscapeCount++;
 
-                    // Track orientation counts
-                    if (pageOrientation === 'portrait') {
-                        portraitCount++;
-                    } else {
-                        landscapeCount++;
-                    }
-
-                    // Update progress
                     const progress = Math.round(((i + 1) / uploadedImages.length) * 100);
                     progressFill.style.width = progress + '%';
                     progressFill.textContent = progress + '%';
@@ -1718,7 +1762,6 @@
                         `🤖 LLM-optimizing image ${i + 1} of ${uploadedImages.length} (${pageOrientation})...` :
                         `Optimizing image ${i + 1} of ${uploadedImages.length} (${pageOrientation})...`;
 
-                    // Create PDF instance on first image or add new page
                     if (i === 0) {
                         pdf = new jsPDF({
                             orientation: pageOrientation,
@@ -1733,10 +1776,8 @@
                     const pageWidth = pdf.internal.pageSize.getWidth();
                     const pageHeight = pdf.internal.pageSize.getHeight();
 
-                    // Optimize image
                     const optimizedData = await optimizeImage(img.data, img.width, img.height, img.type);
 
-                    // Load optimized image
                     const imgElement = new Image();
                     imgElement.src = optimizedData;
                     await new Promise(resolve => imgElement.onload = resolve);
@@ -1747,7 +1788,6 @@
 
                     let width, height, x, y;
 
-                    // Calculate dimensions
                     const availableWidth = pageWidth - (margin * 2);
                     const availableHeight = pageHeight - (margin * 2);
                     const availableRatio = availableWidth / availableHeight;
@@ -1784,7 +1824,6 @@
                             break;
                     }
 
-                    // Calculate position
                     if (alignment === 'center') {
                         x = (pageWidth - width) / 2;
                         y = (pageHeight - height) / 2;
@@ -1793,30 +1832,16 @@
                         y = margin;
                     }
 
-                    // Add to PDF
-                    pdf.addImage(
-                        optimizedData,
-                        'JPEG',
-                        x,
-                        y,
-                        width,
-                        height,
-                        undefined,
-                        'FAST'
-                    );
+                    pdf.addImage(optimizedData, 'JPEG', x, y, width, height, undefined, 'FAST');
 
-                    if (uploadedImages.length > 50 && i % 10 === 0) {
-                        await new Promise(resolve => setTimeout(resolve, 0));
-                    }
+                    await new Promise(resolve => setTimeout(resolve, 10));
                 }
 
-                // Generate PDF
                 pdfBlob = pdf.output('blob');
                 const pdfSize = pdfBlob.size;
                 const savings = originalTotalSize - pdfSize;
                 const savingsPercent = ((savings / originalTotalSize) * 100).toFixed(1);
 
-                // Update stats
                 document.getElementById('originalSize').textContent = formatFileSize(originalTotalSize);
                 document.getElementById('optimizedSize').textContent = formatFileSize(pdfSize);
                 document.getElementById('savedSize').textContent = `${formatFileSize(savings)} (${savingsPercent}%)`;
@@ -1827,7 +1852,6 @@
                     (document.getElementById('compressionLevel').value >= 85 ? 'High' : 'Balanced');
                 document.getElementById('statQuality').textContent = qualityText;
                 
-                // Update download description
                 const downloadDescription = document.getElementById('downloadDescription');
                 let orientationInfo = '';
                 if (orientationMode === 'auto') {
@@ -1877,6 +1901,9 @@
 
         // Show Notification
         function showNotification(message, type = 'success') {
+            const existing = document.querySelectorAll('.notification');
+            existing.forEach(n => n.remove());
+
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
             notification.innerHTML = `
@@ -1891,7 +1918,26 @@
             }, 3000);
         }
 
+        // Event Listeners
+        llmToggle.addEventListener('change', (e) => {
+            toggleLLMMode(e.target.checked);
+        });
+
+        orientationSelect.addEventListener('change', updateOrientationNotice);
+
+        compressionSlider.addEventListener('input', (e) => {
+            updateCompression(e.target.value);
+        });
+
+        // Settings tabs
+        document.querySelectorAll('.settings-tab').forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                switchSettingsTab(index);
+            });
+        });
+
         // Initialize
+        console.log('Image to PDF Converter initialized');
         renderImages();
         updateOptimizationStats();
         updateOrientationNotice();
