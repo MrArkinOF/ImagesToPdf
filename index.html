@@ -65,6 +65,7 @@
             transition: all 0.3s;
             cursor: pointer;
             margin-bottom: 30px;
+            position: relative;
         }
 
         .upload-area:hover {
@@ -92,6 +93,42 @@
         .upload-subtext {
             color: #666;
             font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .upload-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .upload-btn.folder {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .upload-btn.folder:hover {
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.6);
         }
 
         .image-count {
@@ -104,7 +141,8 @@
             margin-top: 10px;
         }
 
-        #fileInput {
+        #fileInput,
+        #folderInput {
             display: none;
         }
 
@@ -675,7 +713,6 @@
             margin-bottom: 5px;
         }
 
-        /* LLM Optimization Styles - MOBILE OPTIMIZED */
         .llm-toggle-container {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             padding: 20px;
@@ -870,11 +907,12 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 9999;
+            flex-direction: column;
         }
 
         .loading-content {
@@ -891,6 +929,33 @@
             height: 50px;
             border: 5px solid #e0e0e0;
             border-top-color: #667eea;
+        }
+
+        .loading-content h3 {
+            color: #667eea;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .loading-content p {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .loading-progress {
+            width: 100%;
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 8px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
         }
 
         /* MOBILE RESPONSIVE STYLES */
@@ -933,6 +998,16 @@
                 font-size: 0.8em;
             }
 
+            .upload-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .upload-btn {
+                width: 100%;
+                padding: 15px;
+            }
+
             .button {
                 padding: 12px 25px;
                 font-size: 1em;
@@ -967,7 +1042,6 @@
                 height: 150px;
             }
 
-            /* LLM Toggle Mobile Fix */
             .llm-toggle-container {
                 padding: 15px;
             }
@@ -1064,7 +1138,6 @@
             }
         }
 
-        /* Extra small devices */
         @media (max-width: 480px) {
             h1 {
                 font-size: 1.5em;
@@ -1110,10 +1183,6 @@
                 padding: 2px 6px;
             }
 
-            .llm-toggle-header {
-                gap: 8px;
-            }
-
             .toggle-switch {
                 width: 50px;
                 height: 26px;
@@ -1150,7 +1219,7 @@
                 <span class="badge">⚡ Up to 80% Smaller</span>
                 <span class="badge">🤖 LLM Optimized</span>
                 <span class="badge">🔄 Auto-Orientation</span>
-                <span class="badge">📁 All Image Formats</span>
+                <span class="badge">📁 Folder Support</span>
             </div>
         </header>
 
@@ -1158,11 +1227,24 @@
             <!-- Upload Area -->
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">📤</div>
-                <div class="upload-text">Click to upload or drag and drop</div>
+                <div class="upload-text">Drag & Drop Files or Folders</div>
                 <div class="upload-subtext">Support: ALL image formats (JPG, PNG, GIF, WEBP, BMP, TIFF, SVG, etc.)</div>
+                
+                <div class="upload-buttons">
+                    <button class="upload-btn" id="selectFilesBtn">
+                        📁 Select Files
+                    </button>
+                    <button class="upload-btn folder" id="selectFolderBtn">
+                        🗂️ Select Folder
+                    </button>
+                </div>
+                
                 <div id="imageCount" style="display: none;" class="image-count">0 images uploaded</div>
             </div>
-            <input type="file" id="fileInput" accept="image/*" multiple>
+            
+            <!-- Hidden file inputs -->
+            <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+            <input type="file" id="folderInput" webkitdirectory directory multiple style="display: none;">
 
             <!-- Download Section -->
             <div class="download-section" id="downloadSection">
@@ -1490,7 +1572,7 @@
             <div class="empty-state" id="emptyState">
                 <div class="empty-icon">🖼️</div>
                 <p>No images uploaded yet</p>
-                <p style="font-size: 0.9em; margin-top: 10px;">Upload images in ANY format - we'll convert and optimize them automatically!</p>
+                <p style="font-size: 0.9em; margin-top: 10px;">Upload images or folders in ANY format - we'll convert and optimize automatically!</p>
             </div>
         </div>
     </div>
@@ -1499,8 +1581,11 @@
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <h3 style="margin-top: 20px; color: #667eea;">Converting Images...</h3>
-            <p id="loadingText" style="margin-top: 10px; color: #666;">Please wait...</p>
+            <h3 id="loadingTitle">Converting Images...</h3>
+            <p id="loadingText">Please wait...</p>
+            <div class="loading-progress">
+                <div class="loading-progress-bar" id="loadingProgressBar"></div>
+            </div>
         </div>
     </div>
 
@@ -1508,7 +1593,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <script>
-        // [Previous JavaScript code remains exactly the same - no changes needed]
         // Global variables
         let uploadedImages = [];
         let draggedElement = null;
@@ -1516,10 +1600,14 @@
         let originalTotalSize = 0;
         let llmModeEnabled = false;
         let imageIdCounter = 0;
+        let isProcessing = false;
 
         // DOM Elements
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
+        const folderInput = document.getElementById('folderInput');
+        const selectFilesBtn = document.getElementById('selectFilesBtn');
+        const selectFolderBtn = document.getElementById('selectFolderBtn');
         const imagesGrid = document.getElementById('imagesGrid');
         const emptyState = document.getElementById('emptyState');
         const controls = document.getElementById('controls');
@@ -1538,15 +1626,26 @@
         const compressionSlider = document.getElementById('compressionLevel');
         const loadingOverlay = document.getElementById('loadingOverlay');
         const loadingText = document.getElementById('loadingText');
+        const loadingTitle = document.getElementById('loadingTitle');
+        const loadingProgressBar = document.getElementById('loadingProgressBar');
 
-        // Show/Hide Loading
-        function showLoading(text = 'Please wait...') {
+        // Show/Hide Loading with Progress
+        function showLoading(title = 'Converting Images...', text = 'Please wait...') {
+            loadingTitle.textContent = title;
             loadingText.textContent = text;
+            loadingProgressBar.style.width = '0%';
             loadingOverlay.style.display = 'flex';
+            isProcessing = true;
+        }
+
+        function updateLoadingProgress(percent, text = '') {
+            loadingProgressBar.style.width = percent + '%';
+            if (text) loadingText.textContent = text;
         }
 
         function hideLoading() {
             loadingOverlay.style.display = 'none';
+            isProcessing = false;
         }
 
         // Detect image orientation
@@ -1639,50 +1738,134 @@
             updateOptimizationStats();
         }
 
-        // Upload Area Click
-        uploadArea.addEventListener('click', (e) => {
-            if (!e.target.closest('.remove-btn')) {
-                fileInput.click();
-            }
+        // File Selection Buttons
+        selectFilesBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
         });
 
-        // File Input Change
+        selectFolderBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            folderInput.click();
+        });
+
+        // File Input Changes
         fileInput.addEventListener('change', async (e) => {
-            if (e.target.files.length > 0) {
-                await handleFiles(e.target.files);
+            if (e.target.files.length > 0 && !isProcessing) {
+                await handleFiles(Array.from(e.target.files));
+                fileInput.value = '';
             }
-            fileInput.value = '';
         });
 
-        // Drag and Drop
-        uploadArea.addEventListener('dragover', (e) => {
+        folderInput.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0 && !isProcessing) {
+                await handleFiles(Array.from(e.target.files));
+                folderInput.value = '';
+            }
+        });
+
+        // Drag and Drop - Click anywhere in upload area
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target === uploadArea || e.target.closest('.upload-icon, .upload-text, .upload-subtext')) {
+                if (!isProcessing) {
+                    fileInput.click();
+                }
+            }
+        });
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
             e.preventDefault();
             e.stopPropagation();
-            uploadArea.classList.add('dragover');
+        }
+
+        // Highlight drop area
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                if (!isProcessing) {
+                    uploadArea.classList.add('dragover');
+                }
+            });
         });
 
-        uploadArea.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            uploadArea.classList.remove('dragover');
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.remove('dragover');
+            });
         });
 
+        // Handle drop
         uploadArea.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            uploadArea.classList.remove('dragover');
+            if (isProcessing) return;
             
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                await handleFiles(files);
+            const dt = e.dataTransfer;
+            const items = dt.items;
+            
+            if (items) {
+                // Handle DataTransferItemList (supports folders)
+                const files = await getAllFiles(items);
+                if (files.length > 0) {
+                    await handleFiles(files);
+                }
+            } else {
+                // Fallback to files
+                const files = Array.from(dt.files);
+                if (files.length > 0) {
+                    await handleFiles(files);
+                }
             }
         });
 
-        // Convert any image to standard format (JPG or PNG)
+        // Get all files including from folders (drag and drop)
+        async function getAllFiles(items) {
+            const files = [];
+            
+            async function traverseFileTree(item, path = '') {
+                if (item.isFile) {
+                    return new Promise((resolve) => {
+                        item.file((file) => {
+                            // Add path info to file
+                            file.fullPath = path + file.name;
+                            resolve(file);
+                        });
+                    });
+                } else if (item.isDirectory) {
+                    const dirReader = item.createReader();
+                    const entries = await new Promise((resolve) => {
+                        dirReader.readEntries(resolve);
+                    });
+                    
+                    const filePromises = [];
+                    for (const entry of entries) {
+                        filePromises.push(traverseFileTree(entry, path + item.name + '/'));
+                    }
+                    return Promise.all(filePromises);
+                }
+            }
+            
+            for (const item of items) {
+                const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : item.getAsEntry();
+                if (entry) {
+                    const result = await traverseFileTree(entry);
+                    if (Array.isArray(result)) {
+                        files.push(...result.flat());
+                    } else if (result) {
+                        files.push(result);
+                    }
+                }
+            }
+            
+            return files;
+        }
+
+        // Convert any image to standard format
         async function convertImageToStandard(file) {
             return new Promise((resolve, reject) => {
-                console.log(`Converting: ${file.name} (${file.type})`);
-                
                 const reader = new FileReader();
                 
                 reader.onload = function(e) {
@@ -1728,8 +1911,6 @@
                             const approximateSize = (base64Length * 3) / 4;
                             const orientation = getImageOrientation(img.width, img.height);
                             
-                            console.log(`✓ Converted: ${file.name} → ${extension.toUpperCase()} (${img.width}x${img.height})`);
-                            
                             resolve({
                                 name: file.name.replace(/\.[^/.]+$/, '') + '.' + extension,
                                 data: dataUrl,
@@ -1740,17 +1921,16 @@
                                 type: format,
                                 orientation: orientation,
                                 originalType: file.type,
-                                converted: file.type !== format
+                                converted: file.type !== format,
+                                path: file.fullPath || file.name
                             });
                             
                         } catch (error) {
-                            console.error('Conversion error:', error);
                             reject(error);
                         }
                     };
                     
                     img.onerror = function() {
-                        console.error(`Failed to load image: ${file.name}`);
                         reject(new Error(`Failed to load image: ${file.name}`));
                     };
                     
@@ -1758,7 +1938,6 @@
                 };
                 
                 reader.onerror = function() {
-                    console.error(`Failed to read file: ${file.name}`);
                     reject(new Error(`Failed to read file: ${file.name}`));
                 };
                 
@@ -1768,28 +1947,30 @@
 
         // Handle Files - Accept ALL image types
         async function handleFiles(files) {
-            const filesArray = Array.from(files);
+            if (!files || files.length === 0) return;
             
-            console.log(`📥 Received ${filesArray.length} files`);
-            showLoading(`Converting ${filesArray.length} images...`);
+            const validExtensions = /\.(jpe?g|png|gif|webp|bmp|tiff?|svg|ico|heic|heif|avif)$/i;
+            const imageFiles = files.filter(file => {
+                return file.type.startsWith('image/') || validExtensions.test(file.name);
+            });
+            
+            if (imageFiles.length === 0) {
+                showNotification('No valid image files found', 'error');
+                return;
+            }
+            
+            console.log(`📥 Processing ${imageFiles.length} image files`);
+            showLoading('Converting Images', `Processing ${imageFiles.length} files...`);
             
             let successCount = 0;
             let errorCount = 0;
 
-            for (let i = 0; i < filesArray.length; i++) {
-                const file = filesArray[i];
+            for (let i = 0; i < imageFiles.length; i++) {
+                const file = imageFiles[i];
                 
                 try {
-                    const isImage = file.type.startsWith('image/') || 
-                                   /\.(jpe?g|png|gif|webp|bmp|tiff?|svg|ico|heic|heif)$/i.test(file.name);
-                    
-                    if (!isImage) {
-                        console.warn(`⚠ Skipped non-image: ${file.name}`);
-                        errorCount++;
-                        continue;
-                    }
-                    
-                    loadingText.textContent = `Converting ${i + 1}/${filesArray.length}: ${file.name}`;
+                    const percent = Math.round(((i + 1) / imageFiles.length) * 100);
+                    updateLoadingProgress(percent, `Converting ${i + 1}/${imageFiles.length}: ${file.name}`);
                     
                     const imageData = await convertImageToStandard(file);
                     uploadedImages.push(imageData);
@@ -1799,6 +1980,11 @@
                 } catch (error) {
                     console.error(`❌ Error loading ${file.name}:`, error);
                     errorCount++;
+                }
+                
+                // Small delay to prevent UI freeze
+                if (i % 5 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 10));
                 }
             }
 
@@ -1970,7 +2156,7 @@
                     <button class="remove-btn" onclick="removeImage(${img.id})">×</button>
                     <img src="${img.data}" alt="${img.name}" loading="lazy">
                     <div class="image-info">
-                        <div class="image-name" title="${img.name}">${img.name}</div>
+                        <div class="image-name" title="${img.path || img.name}">${img.name}</div>
                         <div class="image-meta">
                             <span class="meta-badge order">#${index + 1}</span>
                             <span class="meta-badge size">${formatFileSize(img.size)}</span>
@@ -2059,12 +2245,14 @@
             });
         }
 
-        // Convert to PDF
+        // Convert to PDF (rest of the code continues the same...)
         convertBtn.addEventListener('click', async () => {
             if (uploadedImages.length === 0) {
                 showNotification('Please upload at least one image', 'error');
                 return;
             }
+
+            if (isProcessing) return;
 
             convertBtn.disabled = true;
             const originalBtnText = convertBtn.innerHTML;
@@ -2278,7 +2466,7 @@
         });
 
         // Initialize
-        console.log('✓ Image to PDF Converter Ready - Mobile Optimized!');
+        console.log('✓ Image to PDF Converter Ready - Folder Upload Supported!');
         renderImages();
         updateOptimizationStats();
         updateOrientationNotice();
