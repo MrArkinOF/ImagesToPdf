@@ -256,6 +256,11 @@
             color: #333;
         }
 
+        .meta-badge.orientation {
+            background: #ff6b6b;
+            color: white;
+        }
+
         .meta-badge.optimized {
             background: #764ba2;
             color: white;
@@ -439,6 +444,7 @@
             display: flex;
             gap: 20px;
             margin-top: 5px;
+            flex-wrap: wrap;
         }
 
         .radio-option {
@@ -820,6 +826,24 @@
             font-weight: bold;
             color: #28c940;
         }
+
+        /* Auto-Orientation Highlight */
+        .auto-orientation-notice {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9em;
+        }
+
+        .auto-orientation-notice.disabled {
+            background: #e0e0e0;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -832,6 +856,7 @@
                 <span class="badge">🎯 No Quality Loss</span>
                 <span class="badge">⚡ Up to 80% Smaller</span>
                 <span class="badge">🤖 LLM Optimized</span>
+                <span class="badge">🔄 Auto-Orientation</span>
             </div>
         </header>
 
@@ -914,8 +939,8 @@
                         <span>Balanced Size</span>
                     </div>
                     <div class="llm-feature">
-                        <span class="llm-feature-icon">✨</span>
-                        <span>Enhanced Clarity</span>
+                        <span class="llm-feature-icon">🔄</span>
+                        <span>Auto-Orientation</span>
                     </div>
                 </div>
                 <div class="llm-preset-info" id="llmPresetInfo" style="display: none;">
@@ -924,6 +949,7 @@
                         <li>DPI: 200 (Optimal for text recognition)</li>
                         <li>Compression: 78% (Balanced quality/size)</li>
                         <li>Max Width: 2048px (LLM-friendly resolution)</li>
+                        <li>Auto-orientation enabled (matches source)</li>
                         <li>Color: Auto-optimized</li>
                         <li>PNG → JPEG conversion (preserving transparency)</li>
                         <li>Metadata removed for smaller size</li>
@@ -956,8 +982,12 @@
                         </div>
 
                         <div class="setting-group">
-                            <label>Orientation:</label>
-                            <select id="orientation">
+                            <label>
+                                Orientation Mode:
+                                <span class="info-icon tooltip" data-tooltip="Auto matches each image's orientation">i</span>
+                            </label>
+                            <select id="orientation" onchange="updateOrientationNotice()">
+                                <option value="auto">Auto (Match Image)</option>
                                 <option value="portrait">Portrait (Vertical)</option>
                                 <option value="landscape">Landscape (Horizontal)</option>
                             </select>
@@ -990,6 +1020,13 @@
                         <div class="setting-group">
                             <label>PDF Filename:</label>
                             <input type="text" id="pdfName" placeholder="my-document" value="optimized-pdf">
+                        </div>
+                    </div>
+
+                    <div class="auto-orientation-notice" id="autoOrientationNotice">
+                        <span style="font-size: 1.5em;">🔄</span>
+                        <div>
+                            <strong>Auto-Orientation Active:</strong> Each page will automatically match its source image orientation (portrait/landscape) for optimal viewing.
                         </div>
                     </div>
                 </div>
@@ -1206,6 +1243,41 @@
         const imageCount = document.getElementById('imageCount');
         const llmToggleContainer = document.getElementById('llmToggleContainer');
 
+        // Detect image orientation
+        function getImageOrientation(width, height) {
+            const aspectRatio = width / height;
+            // Consider square images as portrait
+            if (aspectRatio >= 1.05) {
+                return 'landscape';
+            } else {
+                return 'portrait';
+            }
+        }
+
+        // Update orientation notice
+        function updateOrientationNotice() {
+            const orientation = document.getElementById('orientation').value;
+            const notice = document.getElementById('autoOrientationNotice');
+            
+            if (orientation === 'auto') {
+                notice.className = 'auto-orientation-notice';
+                notice.innerHTML = `
+                    <span style="font-size: 1.5em;">🔄</span>
+                    <div>
+                        <strong>Auto-Orientation Active:</strong> Each page will automatically match its source image orientation (portrait/landscape) for optimal viewing.
+                    </div>
+                `;
+            } else {
+                notice.className = 'auto-orientation-notice disabled';
+                notice.innerHTML = `
+                    <span style="font-size: 1.5em;">📐</span>
+                    <div>
+                        <strong>Fixed Orientation:</strong> All pages will use ${orientation} orientation.
+                    </div>
+                `;
+            }
+        }
+
         // LLM Optimization Toggle
         function toggleLLMMode(enabled) {
             llmModeEnabled = enabled;
@@ -1224,6 +1296,8 @@
                 document.getElementById('metadataYes').checked = true;
                 document.getElementById('sharpness').value = 'medium';
                 document.getElementById('pageSize').value = 'a4';
+                document.getElementById('orientation').value = 'auto'; // Enable auto-orientation for LLM
+                updateOrientationNotice();
                 
                 llmActiveBadge.style.display = 'inline-block';
                 llmPresetInfo.style.display = 'block';
@@ -1320,6 +1394,7 @@
                             reader.onload = (e) => {
                                 const img = new Image();
                                 img.onload = () => {
+                                    const orientation = getImageOrientation(img.width, img.height);
                                     uploadedImages.push({
                                         name: file.name,
                                         data: e.target.result,
@@ -1327,7 +1402,8 @@
                                         width: img.width,
                                         height: img.height,
                                         size: file.size,
-                                        type: file.type
+                                        type: file.type,
+                                        orientation: orientation
                                     });
                                     originalTotalSize += file.size;
                                     resolve();
@@ -1507,6 +1583,7 @@
                             <span class="meta-badge order">#${index + 1}</span>
                             <span class="meta-badge size">${formatFileSize(img.size)}</span>
                             <span class="meta-badge dims">${img.width}×${img.height}</span>
+                            <span class="meta-badge orientation">${img.orientation === 'portrait' ? '📱' : '🖥️'} ${img.orientation}</span>
                         </div>
                     </div>
                 </div>
@@ -1586,7 +1663,7 @@
             });
         }
 
-        // Convert to PDF with Advanced Optimization
+        // Convert to PDF with Advanced Optimization and Auto-Orientation
         convertBtn.addEventListener('click', async () => {
             if (uploadedImages.length === 0) {
                 showNotification('Please upload at least one image', 'error');
@@ -1604,37 +1681,57 @@
                 const { jsPDF } = window.jspdf;
                 
                 const pageSize = document.getElementById('pageSize').value;
-                const orientation = document.getElementById('orientation').value;
+                const orientationMode = document.getElementById('orientation').value;
                 const imageFit = document.getElementById('imageFit').value;
                 const alignment = document.querySelector('input[name="alignment"]:checked').value;
                 const filename = document.getElementById('pdfName').value || 'optimized-pdf';
                 const pdfCompress = document.querySelector('input[name="pdfCompress"]:checked').value === 'yes';
                 const margin = parseInt(document.getElementById('margin').value);
 
-                const pdf = new jsPDF({
-                    orientation: orientation,
-                    unit: 'mm',
-                    format: pageSize,
-                    compress: pdfCompress
-                });
-
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
+                let pdf = null;
+                let portraitCount = 0;
+                let landscapeCount = 0;
 
                 for (let i = 0; i < uploadedImages.length; i++) {
                     const img = uploadedImages[i];
                     
+                    // Determine page orientation
+                    let pageOrientation;
+                    if (orientationMode === 'auto') {
+                        pageOrientation = img.orientation;
+                    } else {
+                        pageOrientation = orientationMode;
+                    }
+
+                    // Track orientation counts
+                    if (pageOrientation === 'portrait') {
+                        portraitCount++;
+                    } else {
+                        landscapeCount++;
+                    }
+
                     // Update progress
                     const progress = Math.round(((i + 1) / uploadedImages.length) * 100);
                     progressFill.style.width = progress + '%';
                     progressFill.textContent = progress + '%';
                     progressText.textContent = llmModeEnabled ? 
-                        `🤖 LLM-optimizing image ${i + 1} of ${uploadedImages.length}...` :
-                        `Optimizing image ${i + 1} of ${uploadedImages.length}...`;
+                        `🤖 LLM-optimizing image ${i + 1} of ${uploadedImages.length} (${pageOrientation})...` :
+                        `Optimizing image ${i + 1} of ${uploadedImages.length} (${pageOrientation})...`;
 
-                    if (i > 0) {
-                        pdf.addPage();
+                    // Create PDF instance on first image or add new page
+                    if (i === 0) {
+                        pdf = new jsPDF({
+                            orientation: pageOrientation,
+                            unit: 'mm',
+                            format: pageSize,
+                            compress: pdfCompress
+                        });
+                    } else {
+                        pdf.addPage(pageSize, pageOrientation);
                     }
+
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
 
                     // Optimize image
                     const optimizedData = await optimizeImage(img.data, img.width, img.height, img.type);
@@ -1732,10 +1829,15 @@
                 
                 // Update download description
                 const downloadDescription = document.getElementById('downloadDescription');
+                let orientationInfo = '';
+                if (orientationMode === 'auto') {
+                    orientationInfo = ` with auto-orientation (${portraitCount} portrait, ${landscapeCount} landscape)`;
+                }
+                
                 if (llmModeEnabled) {
-                    downloadDescription.textContent = '🤖 Your LLM-optimized PDF is ready! Perfect for ChatGPT, Claude, and other AI tools.';
+                    downloadDescription.textContent = `🤖 Your LLM-optimized PDF is ready${orientationInfo}! Perfect for ChatGPT, Claude, and other AI tools.`;
                 } else {
-                    downloadDescription.textContent = 'Your optimized PDF has been generated successfully';
+                    downloadDescription.textContent = `Your optimized PDF has been generated successfully${orientationInfo}`;
                 }
                 
                 downloadSection.style.display = 'block';
@@ -1792,6 +1894,7 @@
         // Initialize
         renderImages();
         updateOptimizationStats();
+        updateOrientationNotice();
     </script>
 </body>
 </html>
