@@ -1654,8 +1654,11 @@
         }
 
         function updateLoadingProgress(percent, text = '') {
-            loadingProgressBar.style.width = percent + '%';
-            if (text) loadingText.textContent = text;
+            // Optimization: Use requestAnimationFrame for smoother updates
+            requestAnimationFrame(() => {
+                loadingProgressBar.style.width = percent + '%';
+                if (text) loadingText.textContent = text;
+            });
         }
 
         function hideLoading() {
@@ -2270,7 +2273,9 @@
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+            // Optimization: Use toFixed only when necessary (reduce string operations)
+            const value = bytes / Math.pow(k, i);
+            return (value % 1 === 0 ? value : value.toFixed(2)) + ' ' + sizes[i];
         }
 
         // Remove Image
@@ -2370,6 +2375,9 @@
                 let pdf = null;
                 let portraitCount = 0;
                 let landscapeCount = 0;
+                
+                // Optimization: Cache page dimensions to avoid recalculation
+                const pageDimensionsCache = {};
 
                 for (let i = 0; i < uploadedImages.length; i++) {
                     const img = uploadedImages[i];
@@ -2380,11 +2388,14 @@
                     else landscapeCount++;
 
                     const progress = Math.round(((i + 1) / uploadedImages.length) * 100);
-                    progressFill.style.width = progress + '%';
-                    progressFill.textContent = progress + '%';
-                    progressText.textContent = llmModeEnabled ? 
-                        `🤖 Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...` :
-                        `Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...`;
+                    // Optimization: Batch DOM updates with requestAnimationFrame
+                    requestAnimationFrame(() => {
+                        progressFill.style.width = progress + '%';
+                        progressFill.textContent = progress + '%';
+                        progressText.textContent = llmModeEnabled ? 
+                            `🤖 Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...` :
+                            `Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...`;
+                    });
 
                     if (i === 0) {
                         pdf = new jsPDF({
@@ -2397,8 +2408,16 @@
                         pdf.addPage(pageSize, pageOrientation);
                     }
 
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    // Optimization: Use cached dimensions if available
+                    let pageWidth, pageHeight;
+                    const cacheKey = `${pageSize}-${pageOrientation}`;
+                    if (pageDimensionsCache[cacheKey]) {
+                        ({ pageWidth, pageHeight } = pageDimensionsCache[cacheKey]);
+                    } else {
+                        pageWidth = pdf.internal.pageSize.getWidth();
+                        pageHeight = pdf.internal.pageSize.getHeight();
+                        pageDimensionsCache[cacheKey] = { pageWidth, pageHeight };
+                    }
 
                     const optimizedData = await optimizeImage(img.data, img.width, img.height, img.type);
 
@@ -2412,8 +2431,10 @@
 
                     let width, height, x, y;
 
-                    const availableWidth = pageWidth - (margin * 2);
-                    const availableHeight = pageHeight - (margin * 2);
+                    // Optimization: Calculate available space once per page dimension type
+                    const margin2x = margin * 2;
+                    const availableWidth = pageWidth - margin2x;
+                    const availableHeight = pageHeight - margin2x;
                     const availableRatio = availableWidth / availableHeight;
 
                     switch (imageFit) {
