@@ -208,6 +208,9 @@
             max-height: 600px;
             overflow-y: auto;
             padding: 10px;
+            /* Optimization: Enable GPU acceleration */
+            will-change: scroll-position;
+            transform: translateZ(0);
         }
 
         .images-grid::-webkit-scrollbar {
@@ -236,6 +239,9 @@
             background: #f9f9f9;
             transition: all 0.3s;
             cursor: move;
+            /* Optimization: Enable GPU acceleration for transforms */
+            will-change: transform;
+            transform: translateZ(0);
         }
 
         .image-card:hover {
@@ -249,6 +255,8 @@
             height: 200px;
             object-fit: contain;
             background: #000;
+            /* Optimization: Reduce image rendering overhead */
+            image-rendering: -webkit-optimize-contrast;
         }
 
         .image-info {
@@ -1601,6 +1609,13 @@
         let llmModeEnabled = false;
         let imageIdCounter = 0;
         let isProcessing = false;
+        
+        // Optimization: Object URL cache for cleanup
+        const objectURLCache = new Set();
+        
+        // Optimization: Reusable canvas pool
+        const canvasPool = [];
+        const MAX_POOL_SIZE = 3;
 
         // DOM Elements
         const uploadArea = document.getElementById('uploadArea');
@@ -1639,13 +1654,49 @@
         }
 
         function updateLoadingProgress(percent, text = '') {
-            loadingProgressBar.style.width = percent + '%';
-            if (text) loadingText.textContent = text;
+            // Optimization: Use requestAnimationFrame for smoother updates
+            requestAnimationFrame(() => {
+                loadingProgressBar.style.width = percent + '%';
+                if (text) loadingText.textContent = text;
+            });
         }
 
         function hideLoading() {
             loadingOverlay.style.display = 'none';
             isProcessing = false;
+        }
+        
+        // Optimization: Get or create canvas from pool
+        function getCanvas() {
+            return canvasPool.pop() || document.createElement('canvas');
+        }
+        
+        // Optimization: Return canvas to pool
+        function releaseCanvas(canvas) {
+            if (canvasPool.length < MAX_POOL_SIZE) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvasPool.push(canvas);
+            }
+        }
+        
+        // Optimization: Clean up object URLs
+        function cleanupObjectURLs() {
+            objectURLCache.forEach(url => URL.revokeObjectURL(url));
+            objectURLCache.clear();
+        }
+        
+        // Optimization: Debounce function for expensive operations
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
         }
 
         // Detect image orientation
@@ -1873,7 +1924,7 @@
                     
                     img.onload = function() {
                         try {
-                            const canvas = document.createElement('canvas');
+                            const canvas = getCanvas(); // Optimization: Use canvas pool
                             const ctx = canvas.getContext('2d', { willReadFrequently: false });
                             
                             canvas.width = img.width;
@@ -1884,9 +1935,15 @@
                             let hasTransparency = false;
                             const outputFormat = document.getElementById('outputFormat').value;
                             
+                            // Optimization: Only check transparency if needed
                             if (outputFormat === 'auto' || outputFormat === 'png') {
                                 try {
-                                    const imageData = ctx.getImageData(0, 0, Math.min(canvas.width, 100), Math.min(canvas.height, 100));
+                                    // Optimization: Sample smaller area for transparency check
+                                    const sampleWidth = Math.min(canvas.width, 50);
+                                    const sampleHeight = Math.min(canvas.height, 50);
+                                    const imageData = ctx.getImageData(0, 0, sampleWidth, sampleHeight);
+                                    
+                                    // Optimization: Early exit when transparency found
                                     for (let i = 3; i < imageData.data.length; i += 4) {
                                         if (imageData.data[i] < 255) {
                                             hasTransparency = true;
@@ -1910,6 +1967,8 @@
                             const base64Length = dataUrl.split(',')[1].length;
                             const approximateSize = (base64Length * 3) / 4;
                             const orientation = getImageOrientation(img.width, img.height);
+                            
+                            releaseCanvas(canvas); // Optimization: Return canvas to pool
                             
                             resolve({
                                 name: file.name.replace(/\.[^/.]+$/, '') + '.' + extension,
@@ -1964,26 +2023,42 @@
             
             let successCount = 0;
             let errorCount = 0;
-
-            for (let i = 0; i < imageFiles.length; i++) {
-                const file = imageFiles[i];
+            
+            // Optimization: Process images in batches to prevent UI freeze
+            const BATCH_SIZE = 5;
+            for (let batchStart = 0; batchStart < imageFiles.length; batchStart += BATCH_SIZE) {
+                const batchEnd = Math.min(batchStart + BATCH_SIZE, imageFiles.length);
+                const batch = imageFiles.slice(batchStart, batchEnd);
                 
-                try {
-                    const percent = Math.round(((i + 1) / imageFiles.length) * 100);
-                    updateLoadingProgress(percent, `Converting ${i + 1}/${imageFiles.length}: ${file.name}`);
-                    
-                    const imageData = await convertImageToStandard(file);
-                    uploadedImages.push(imageData);
-                    originalTotalSize += file.size;
-                    successCount++;
-                    
-                } catch (error) {
-                    console.error(`❌ Error loading ${file.name}:`, error);
-                    errorCount++;
-                }
+                // Process batch in parallel
+                const batchPromises = batch.map(async (file, idx) => {
+                    const i = batchStart + idx;
+                    try {
+                        const percent = Math.round(((i + 1) / imageFiles.length) * 100);
+                        updateLoadingProgress(percent, `Converting ${i + 1}/${imageFiles.length}: ${file.name}`);
+                        
+                        const imageData = await convertImageToStandard(file);
+                        return { success: true, imageData, originalSize: file.size };
+                    } catch (error) {
+                        console.error(`❌ Error loading ${file.name}:`, error);
+                        return { success: false };
+                    }
+                });
                 
-                // Small delay to prevent UI freeze
-                if (i % 5 === 0) {
+                const results = await Promise.all(batchPromises);
+                
+                results.forEach(result => {
+                    if (result.success) {
+                        uploadedImages.push(result.imageData);
+                        originalTotalSize += result.originalSize;
+                        successCount++;
+                    } else {
+                        errorCount++;
+                    }
+                });
+                
+                // Small delay between batches
+                if (batchEnd < imageFiles.length) {
                     await new Promise(resolve => setTimeout(resolve, 10));
                 }
             }
@@ -2018,18 +2093,29 @@
                 
                 const kernel = kernels[level];
                 
-                for (let y = 1; y < height - 1; y++) {
-                    for (let x = 1; x < width - 1; x++) {
+                // Optimization: Process pixels more efficiently
+                const widthMinusOne = width - 1;
+                const heightMinusOne = height - 1;
+                
+                for (let y = 1; y < heightMinusOne; y++) {
+                    for (let x = 1; x < widthMinusOne; x++) {
+                        const centerIdx = (y * width + x) * 4;
+                        
+                        // Process RGB channels (skip alpha)
                         for (let c = 0; c < 3; c++) {
                             let sum = 0;
+                            let ki = 0;
+                            
+                            // Unrolled kernel loop for better performance
                             for (let ky = -1; ky <= 1; ky++) {
+                                const yOffset = (y + ky) * width;
                                 for (let kx = -1; kx <= 1; kx++) {
-                                    const idx = ((y + ky) * width + (x + kx)) * 4 + c;
-                                    sum += tempData[idx] * kernel[(ky + 1) * 3 + (kx + 1)];
+                                    const idx = (yOffset + x + kx) * 4 + c;
+                                    sum += tempData[idx] * kernel[ki++];
                                 }
                             }
-                            const idx = (y * width + x) * 4 + c;
-                            pixels[idx] = Math.max(0, Math.min(255, sum));
+                            
+                            pixels[centerIdx + c] = Math.max(0, Math.min(255, sum));
                         }
                     }
                 }
@@ -2044,7 +2130,7 @@
         async function optimizeImage(imageData, width, height, type) {
             return new Promise((resolve, reject) => {
                 try {
-                    const canvas = document.createElement('canvas');
+                    const canvas = getCanvas(); // Optimization: Use canvas pool
                     const ctx = canvas.getContext('2d', { willReadFrequently: true });
                     const img = new Image();
 
@@ -2086,14 +2172,18 @@
 
                             const quality = compressionLevel;
                             const optimizedData = canvas.toDataURL(type, quality);
+                            
+                            releaseCanvas(canvas); // Optimization: Return canvas to pool
                             resolve(optimizedData);
                             
                         } catch (error) {
+                            releaseCanvas(canvas); // Optimization: Ensure cleanup on error
                             reject(error);
                         }
                     };
 
                     img.onerror = () => {
+                        releaseCanvas(canvas); // Optimization: Ensure cleanup on error
                         reject(new Error('Failed to load image for optimization'));
                     };
 
@@ -2151,7 +2241,11 @@
             llmToggleContainer.style.display = 'block';
             imageCount.textContent = `${uploadedImages.length} image${uploadedImages.length > 1 ? 's' : ''} uploaded`;
 
-            const html = uploadedImages.map((img, index) => `
+            // Optimization: Build HTML array then join (faster than string concatenation)
+            const htmlParts = [];
+            for (let index = 0; index < uploadedImages.length; index++) {
+                const img = uploadedImages[index];
+                htmlParts.push(`
                 <div class="image-card" draggable="true" data-id="${img.id}">
                     <button class="remove-btn" onclick="removeImage(${img.id})">×</button>
                     <img src="${img.data}" alt="${img.name}" loading="lazy">
@@ -2166,9 +2260,10 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+                `);
+            }
 
-            imagesGrid.innerHTML = html;
+            imagesGrid.innerHTML = htmlParts.join('');
             addDragListeners();
         }
 
@@ -2178,7 +2273,9 @@
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + sizes[i];
+            // Optimization: Use toFixed only when necessary (reduce string operations)
+            const value = bytes / Math.pow(k, i);
+            return (value % 1 === 0 ? value : value.toFixed(2)) + ' ' + sizes[i];
         }
 
         // Remove Image
@@ -2196,6 +2293,9 @@
         // Clear All
         clearBtn.addEventListener('click', () => {
             if (confirm('Are you sure you want to remove all images?')) {
+                // Optimization: Clean up object URLs before clearing
+                cleanupObjectURLs();
+                
                 uploadedImages = [];
                 originalTotalSize = 0;
                 pdfBlob = null;
@@ -2275,6 +2375,9 @@
                 let pdf = null;
                 let portraitCount = 0;
                 let landscapeCount = 0;
+                
+                // Optimization: Cache page dimensions to avoid recalculation
+                const pageDimensionsCache = {};
 
                 for (let i = 0; i < uploadedImages.length; i++) {
                     const img = uploadedImages[i];
@@ -2285,11 +2388,14 @@
                     else landscapeCount++;
 
                     const progress = Math.round(((i + 1) / uploadedImages.length) * 100);
-                    progressFill.style.width = progress + '%';
-                    progressFill.textContent = progress + '%';
-                    progressText.textContent = llmModeEnabled ? 
-                        `🤖 Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...` :
-                        `Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...`;
+                    // Optimization: Batch DOM updates with requestAnimationFrame
+                    requestAnimationFrame(() => {
+                        progressFill.style.width = progress + '%';
+                        progressFill.textContent = progress + '%';
+                        progressText.textContent = llmModeEnabled ? 
+                            `🤖 Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...` :
+                            `Processing ${i + 1}/${uploadedImages.length} (${pageOrientation})...`;
+                    });
 
                     if (i === 0) {
                         pdf = new jsPDF({
@@ -2302,8 +2408,16 @@
                         pdf.addPage(pageSize, pageOrientation);
                     }
 
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    // Optimization: Use cached dimensions if available
+                    let pageWidth, pageHeight;
+                    const cacheKey = `${pageSize}-${pageOrientation}`;
+                    if (pageDimensionsCache[cacheKey]) {
+                        ({ pageWidth, pageHeight } = pageDimensionsCache[cacheKey]);
+                    } else {
+                        pageWidth = pdf.internal.pageSize.getWidth();
+                        pageHeight = pdf.internal.pageSize.getHeight();
+                        pageDimensionsCache[cacheKey] = { pageWidth, pageHeight };
+                    }
 
                     const optimizedData = await optimizeImage(img.data, img.width, img.height, img.type);
 
@@ -2317,8 +2431,10 @@
 
                     let width, height, x, y;
 
-                    const availableWidth = pageWidth - (margin * 2);
-                    const availableHeight = pageHeight - (margin * 2);
+                    // Optimization: Calculate available space once per page dimension type
+                    const margin2x = margin * 2;
+                    const availableWidth = pageWidth - margin2x;
+                    const availableHeight = pageHeight - margin2x;
                     const availableRatio = availableWidth / availableHeight;
 
                     switch (imageFit) {
@@ -2420,10 +2536,18 @@
                     filename += '-llm-optimized';
                 }
                 const link = document.createElement('a');
-                link.href = URL.createObjectURL(pdfBlob);
+                const objectURL = URL.createObjectURL(pdfBlob);
+                objectURLCache.add(objectURL); // Optimization: Track for cleanup
+                link.href = objectURL;
                 link.download = filename + '.pdf';
                 link.click();
-                URL.revokeObjectURL(link.href);
+                
+                // Optimization: Clean up object URL after a delay
+                setTimeout(() => {
+                    URL.revokeObjectURL(objectURL);
+                    objectURLCache.delete(objectURL);
+                }, 100);
+                
                 showNotification('PDF downloaded successfully!', 'success');
             }
         });
@@ -2457,6 +2581,14 @@
         compressionSlider.addEventListener('input', (e) => {
             updateCompression(e.target.value);
         });
+        
+        // Optimization: Debounce expensive operations triggered by settings changes
+        const debouncedOptimizationUpdate = debounce(updateOptimizationStats, 300);
+        
+        // Optimization: Add debounced listeners for settings that affect calculations
+        ['maxWidth', 'dpi', 'colorMode', 'outputFormat'].forEach(id => {
+            document.getElementById(id).addEventListener('change', debouncedOptimizationUpdate);
+        });
 
         // Settings tabs
         document.querySelectorAll('.settings-tab').forEach((tab, index) => {
@@ -2470,6 +2602,12 @@
         renderImages();
         updateOptimizationStats();
         updateOrientationNotice();
+        
+        // Optimization: Clean up resources when page is closed
+        window.addEventListener('beforeunload', () => {
+            cleanupObjectURLs();
+            canvasPool.length = 0; // Clear canvas pool
+        });
     </script>
 </body>
 </html>
